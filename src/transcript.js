@@ -33,8 +33,15 @@ export class TranscriptAssembler {
 export class TimedTranscriptAssembler {
   end = -Infinity;
   lastWord = '';
+  constructor({ preferSentences = false } = {}) { this.preferSentences = preferSentences; }
   accept(words, offset = 0, stableUntil = Infinity) {
     const output = [];
+    if (this.preferSentences && Number.isFinite(stableUntil)) {
+      const stable = words.filter(word => Number(word.end) + offset <= stableUntil + 0.001 && Number(word.end) + offset > this.end + 0.001);
+      const boundary = stable.findLastIndex(word => /[.!?]["')\]]?$/.test(String(word.word || '').trim()));
+      if (boundary >= 0) stableUntil = Number(stable[boundary].end) + offset;
+      else if (!stable.length || Number(stable.at(-1).end) + offset - Math.max(Number(stable[0].start) + offset, Number.isFinite(this.end) ? this.end : 0) < 4) return '';
+    }
     for (const word of words) {
       const start = Number(word.start) + offset, end = Number(word.end) + offset;
       const text = String(word.word || '').trim(), key = text.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');

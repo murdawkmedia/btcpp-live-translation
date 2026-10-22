@@ -91,7 +91,8 @@ was already in flight may be lost; the app does not claim gapless recovery.
 Local recognition uses pause-aware chunks of up to five seconds. Workers AI
 recognition starts a window at five seconds, then refreshes every three seconds
 with up to ten seconds of preceding audio context. Word timing suppresses
-overlap; the final 0.6 seconds wait for more context. A 0.7-second pause or Stop
+overlap; complete sentences are preferred, with a four-second fallback for
+longer phrases. The final 0.6 seconds wait for more context. A 0.7-second pause or Stop
 flushes the tail. This trades additional recognition work for better continuity
 around technical terms; it is not word-by-word simultaneous interpretation.
 

@@ -15,7 +15,7 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
   let chunks = [], size = 0, quiet = 0, hasSpeech = false, ended = false, processing = false, closed = false;
   let lead = Buffer.alloc(0), received = 0, start = 0, timed = false, fresh = 0;
   const queue = [], controller = new AbortController();
-  const cloud = config.sttProvider === 'workers-ai', assembler = new TimedTranscriptAssembler();
+  const cloud = config.sttProvider === 'workers-ai', assembler = new TimedTranscriptAssembler({ preferSentences: true });
   const hints = selectHints(topic, { limit: cloud ? 20 : 50, maxLength: cloud ? 40 : 50, context });
   const prefix = 'English Bitcoin technical conference. Technical spellings: ';
   if (cloud) while ((prefix + hints.join(', ') + '.').length > 500) hints.pop();

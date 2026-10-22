@@ -92,3 +92,16 @@ test('timed words retain tokenizer spacing in amounts and punctuation', () => {
     { word: ' sats.', start: 0.6, end: 0.8 }
   ]), 'Alice sends 1,000 sats.');
 });
+
+test('sentence commits keep an amount with its unit and complete comparison', () => {
+  const a = new transcript.TimedTranscriptAssembler({ preferSentences: true });
+  const words = [
+    { word: ' Lightning', start: 0, end: 1 }, { word: ' works.', start: 1, end: 2 },
+    { word: ' Alice', start: 2, end: 3 }, { word: ' sends', start: 3, end: 3.5 },
+    { word: ' 1,000', start: 3.5, end: 4 }, { word: ' satoshis,', start: 4, end: 4.7 },
+    { word: ' not', start: 4.7, end: 5 }, { word: ' 1,000,000.', start: 5, end: 6 }
+  ];
+  assert.equal(a.accept(words, 0, 4.4), 'Lightning works.');
+  assert.equal(a.accept(words, 0, 6.5), 'Alice sends 1,000 satoshis, not 1,000,000.');
+  assert.equal(a.accept([...words, { word: ' Final', start: 6.1, end: 6.5 }], 0), 'Final');
+});

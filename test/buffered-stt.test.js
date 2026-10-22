@@ -17,14 +17,14 @@ test('buffered recognition keeps overlapping audio and emits each timed word onc
     assert.equal(input.word_timestamps, true);
     lengths.push((Buffer.from(input.audio, 'base64').length - 44) / 32000);
     const words = call++ === 0
-      ? [{ word: 'Bitcoin', start: 0, end: 0.8 }, { word: 'channels', start: 0.8, end: 1.8 }, { word: 'protect', start: 2, end: 2.8 }, { word: 'your', start: 3.3, end: 3.8 }, { word: 'seed', start: 4.2, end: 4.95 }]
+      ? [{ word: 'Bitcoin', start: 0, end: 0.8 }, { word: 'channels', start: 0.8, end: 1.8 }, { word: 'protect.', start: 2, end: 2.8 }, { word: 'your', start: 3.3, end: 3.8 }, { word: 'seed', start: 4.2, end: 4.95 }]
       : [{ word: 'your', start: 3.3, end: 3.8 }, { word: 'seed', start: 4.2, end: 4.95 }, { word: 'phrase', start: 5, end: 5.4 }, { word: 'private', start: 5.5, end: 6.1 }];
     return { text: words.map(word => word.word).join(' '), segments: [{ words }] };
   });
   for (let i = 0; i < 75; i++) bridge.send(speech());
   bridge.finish(); await closed;
   assert.deepEqual(lengths, [5, 7.5]);
-  assert.deepEqual(texts, ['Bitcoin channels protect your', 'seed phrase private']);
+  assert.deepEqual(texts, ['Bitcoin channels protect.', 'your seed phrase private']);
 });
 
 test('the input onset keeps a short quiet lead-in instead of clipping the first word', async () => {
