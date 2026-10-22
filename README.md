@@ -6,6 +6,10 @@ Bitcoin terminology guides recognition and translation. The first event setting
 is English to Korean, with selectable Japanese, Spanish, French and Chinese.
 One target language is broadcast per session; stop before changing it.
 
+Source: [Nostr primary](https://gitworkshop.dev/npub17j3f7cuhcvjqnf7d80x6rt9hmkkhdguwg4l2th0h4qnhqketr63s6xakwv/relay.ngit.dev/btcpp-live-translation)
+· [GitHub mirror](https://github.com/murdawkmedia/btcpp-live-translation).
+See [source maintenance](docs/source-hosting.md) for publication order.
+
 One repository supports two operating profiles:
 
 - **Local runner on Windows or Linux:** local model endpoints by default, with

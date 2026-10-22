@@ -22,7 +22,7 @@ public Nostr/GitHub source.
 - [ ] Verify the Murdawk Media account and existing provider credential pointers.
   Configure scoped Worker secrets privately. Deploy one new named app and verify
   public assets, auth, QR phone rehearsal and a bounded generated-speech live run.
-- [ ] Sanitize public docs, add MIT and upstream notices, scan every staged file
+- [x] Sanitize public docs, add MIT and upstream notices, scan every staged file
   and all outgoing Git history. Publish Nostr first under the existing public
   identity, then create/push the Murdawk Media GitHub mirror. Fresh anonymous
   clones must match the reviewed commit/tree and pass tests.

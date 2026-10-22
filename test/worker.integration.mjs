@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { writeFile, mkdir } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createRehearsalProvider } from '../src/rehearsal.js';
 
@@ -34,9 +35,9 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   const port = reserve.address().port; await new Promise(resolve => reserve.close(resolve));
   const origin = `http://127.0.0.1:${port}`, fixture = `http://127.0.0.1:${http.address().port}`;
   await mkdir('.runtime', { recursive: true });
-  const config = { name: 'translation-worker-fixture', main: new URL('../cloudflare/worker.js', import.meta.url).pathname,
+  const config = { name: 'translation-worker-fixture', main: fileURLToPath(new URL('../cloudflare/worker.js', import.meta.url)),
     compatibility_date: '2026-10-19', compatibility_flags: ['nodejs_compat'],
-    assets: { directory: new URL('../public', import.meta.url).pathname, binding: 'ASSETS', run_worker_first: true, html_handling: 'none' },
+    assets: { directory: fileURLToPath(new URL('../public', import.meta.url)), binding: 'ASSETS', run_worker_first: true, html_handling: 'none' },
     durable_objects: { bindings: [{ name: 'STAGE', class_name: 'StageSession' }] },
     migrations: [{ tag: 'v1', new_sqlite_classes: ['StageSession'] }],
     vars: { PROFILE: 'cloud', STT_PROVIDER: 'elevenlabs', TRANSLATION_PROVIDER: 'xai', TTS_PROVIDER: 'xai',
