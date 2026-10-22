@@ -1,0 +1,2789 @@
+{
+  "version": 1,
+  "description": "Authored spelling and context reference, not a claim of exhaustive coverage or Korean linguistic review.",
+  "reviewedKoreanTerms": 0,
+  "terms": [
+    {
+      "term": "Bitcoin",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "satoshi",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "satoshis",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "BTC",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "Bitcoin Core",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "full node",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "consensus",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "blockchain",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "block height",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "block header",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "genesis block",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "coinbase transaction",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "block reward",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "halving",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "soft fork",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "hard fork",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "chain reorganization",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "orphan block",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "stale block",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "merkle root",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "merkle tree",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "proof of work",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "double spending",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "difficulty adjustment",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "signet",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "regtest",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "testnet",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "mainnet",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "P2P",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "compact block",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "pruned node",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "initial block download",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "assumeutxo",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "BIP",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "BIPs",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "CISA",
+      "category": "protocol",
+      "aliases": [
+        "cross input signature aggregation"
+      ],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "BIP 460",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/glossary.html"
+    },
+    {
+      "term": "UTXO",
+      "category": "transactions",
+      "aliases": [
+        "UTXOs",
+        "you tee ex oh"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "UTXOs",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "transaction input",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "transaction output",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "transaction ID",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "txid",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "wtxid",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "outpoint",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "change output",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "mempool",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "fee rate",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "sat/vB",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "dust limit",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "coin selection",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "coin control",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "RBF",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "replace-by-fee",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "CPFP",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "child-pays-for-parent",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "package relay",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "TRUC",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "v3 transaction",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "nSequence",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "nLockTime",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "absolute timelock",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "relative timelock",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "CSV",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "CLTV",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "SegWit",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "Taproot",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "Tapscript",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "witness",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "scriptPubKey",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "scriptSig",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "OP_RETURN",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "OP_CHECKSIG",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "OP_CHECKSIGADD",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "OP_CAT",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "OP_CTV",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "SIGHASH",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "SIGHASH_ANYPREVOUT",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "ANYPREVOUT",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "covenant",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/transactions.html"
+    },
+    {
+      "term": "wallet",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "self-custody",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "private key",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "public key",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "seed phrase",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "mnemonic",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 32",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 39",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 84",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 174",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 340",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 341",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 352",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 157",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 158",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BIP 324",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "HD wallet",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "extended public key",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "xpub",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "output descriptor",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "PSBT",
+      "category": "wallets",
+      "aliases": [
+        "PSBTs",
+        "pee ess bee tee"
+      ],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "partially signed Bitcoin transaction",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "multisig",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "hardware wallet",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "air-gapped wallet",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "watch-only wallet",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Bech32",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Bech32m",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Base58Check",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "P2PKH",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "P2SH",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "P2WPKH",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "P2WSH",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "P2TR",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Electrum",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Esplora",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "BDK",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Kyoto",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Miniscript",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Bitcoin Script",
+      "category": "wallets",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "mining",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "hashrate",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "ASIC",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "Stratum",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "Stratum V2",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "mining pool",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "block template",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "nonce",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "extranonce",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "target",
+      "category": "mining",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "retarget",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "pool share",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "solo mining",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "SHA-256",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "SHA256d",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "hash function",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "transaction fees",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "block subsidy",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "coinbase maturity",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "merged mining",
+      "category": "mining",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://developer.bitcoin.org/devguide/mining.html"
+    },
+    {
+      "term": "Lightning",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "Lightning Network",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "BOLT",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "BOLT 11",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "BOLT 12",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "payment channel",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "channel capacity",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "channel liquidity",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "inbound liquidity",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "outbound liquidity",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "HTLC",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "PTLC",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "onion routing",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "onion message",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "route blinding",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "payment secret",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "payment preimage",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "payment hash",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "commitment transaction",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "revocation key",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "force close",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "cooperative close",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "watchtower",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "anchor output",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "channel splice",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "splicing",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "dual funding",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "multi-path payment",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "AMP",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "MPP",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "LNURL",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "LNURL-pay",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "Lightning address",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "LND",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "Core Lightning",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "CLN",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "Eclair",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "LDK",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "LSP",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "liquidity service provider",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "trampoline routing",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "submarine swap",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "Loop",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "Boltz",
+      "category": "lightning",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/lightning/bolts"
+    },
+    {
+      "term": "privacy",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "fungibility",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "CoinJoin",
+      "category": "privacy",
+      "aliases": [
+        "coin join"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Payjoin",
+      "category": "privacy",
+      "aliases": [
+        "pay join"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "JoinMarket",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "WabiSabi",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Silent Payments",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "coinjoin coordinator",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "coinjoin change",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "address reuse",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "transaction graph",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "cluster analysis",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "common-input-ownership heuristic",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "change detection",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "coin control privacy",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Tor",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "I2P",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Dandelion",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "BIP 47",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "payment code",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "BIP 78",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "P2EP",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "BIP 77",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "SNICKER",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Stonewall",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Wasabi Wallet",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Samourai Wallet",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Sparrow Wallet",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Lichen",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Bark",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Ark",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Arkade",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "VTXO",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "virtual UTXO",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "statechain",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Mercury",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "swap-in-potentiam",
+      "category": "privacy",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Schnorr signature",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "ECDSA",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "secp256k1",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "elliptic curve",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "discrete logarithm",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "MuSig",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "MuSig2",
+      "category": "cryptography",
+      "aliases": [
+        "mu sig two"
+      ],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "FROST",
+      "category": "cryptography",
+      "aliases": [
+        "flexible round-optimized Schnorr threshold"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "ROAST",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "DLEQ",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "DLEQ proof",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "zero-knowledge proof",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "range proof",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Pedersen commitment",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "adaptor signature",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "blind signature",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "threshold signature",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "distributed key generation",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "DKG",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "nonce reuse",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "key aggregation",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "signature aggregation",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "cross-input signature aggregation",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "PQC",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "post-quantum cryptography",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "quantum resistance",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "HMAC",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "HKDF",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "AES",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "ChaCha20",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Poly1305",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "Diffie-Hellman",
+      "category": "cryptography",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "ecash",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "Cashu",
+      "category": "ecash",
+      "aliases": [
+        "cash oo"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "Fedimint",
+      "category": "ecash",
+      "aliases": [
+        "fedi mint"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "federated ecash",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "mint",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "mint quote",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "melt quote",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "blinded message",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "blinded signature",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "keyset",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "proof of unspent",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "double-spend protection",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "federation",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "guardian",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "Byzantine fault tolerance",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "BFT",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUTs",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "cashu token",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT-00",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT-07",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT-10",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT-11",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT-12",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "NUT-13",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "DLEQ verification",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "Cashu mint",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "Fedimint gateway",
+      "category": "ecash",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://cashubtc.github.io/nuts/"
+    },
+    {
+      "term": "Nostr",
+      "category": "nostr",
+      "aliases": [
+        "noster"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIPs",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "relay",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Nostr event",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "event kind",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "npub",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "nsec",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "nevent",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "nprofile",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "naddr",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-01",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-04",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-05",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-07",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-17",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-19",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-42",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-44",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-46",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-47",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-57",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-65",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-98",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Nostr Wallet Connect",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NWC",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "zap",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "zaps",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "zapper",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-53",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "live activity",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "gift wrap",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-59",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Blossom",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "NIP-99",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Cashu wallet",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Marmot",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "MLS",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Messaging Layer Security",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Whitenoise",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": true,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "Nostr Connect",
+      "category": "nostr",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://github.com/nostr-protocol/nips"
+    },
+    {
+      "term": "replay attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "eclipse attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Sybil attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "timewarp attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "transaction malleability",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "fee sniping",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "pinning attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "jamming attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "replacement cycling",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "Lightning probing",
+      "category": "security",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "HTLC theft",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "key exfiltration",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "entropy",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "secure element",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "trusted execution environment",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "remote attestation",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "reproducible build",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "supply chain attack",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "cold storage",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "hot wallet",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "backup",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "recovery",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "inheritance",
+      "category": "security",
+      "aliases": [],
+      "priority": 1,
+      "preserve": false,
+      "source": "https://bitcoinops.org/en/topics/"
+    }
+  ]
+}
