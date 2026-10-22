@@ -47,6 +47,9 @@ const wording = {
     failed: '请再次点击收听以启用音频。', speechFailed: '音频暂时不可用，字幕仍然可用。', reconnect: '连接已中断，正在自动重新连接。', missing: '观众链接缺失或无效，请重新扫描活动二维码。' }
 };
 const words = () => wording[locale];
+const recognitionDelay = { en: 'Recognition is catching up. Some earlier speech may be missing.', ko: '음성 인식이 지연되어 일부 내용이 누락될 수 있습니다.',
+  ja: '音声認識が遅れているため、一部の発言が欠けている可能性があります。', es: 'El reconocimiento se está poniendo al día. Puede faltar parte del discurso anterior.',
+  fr: 'La reconnaissance rattrape son retard. Certains propos précédents peuvent manquer.', zh: '语音识别正在追赶进度，之前的部分内容可能缺失。' };
 const notice = (text, warning = false) => { $('notice').textContent = text; $('notice').classList.toggle('warning', warning); };
 const button = () => { $('listen').textContent = words()[listening ? 'pause' : 'listen']; };
 function renderInterface() {
@@ -178,7 +181,7 @@ if (token) {
     if (event.type === 'caption' || event.type === 'transcript') { caption(event.segment); $('english-partial').textContent = ''; }
     if (event.type === 'partial' && live) $('english-partial').textContent = event.text;
     if (event.type === 'audio') acceptAudio(event);
-    if (event.type === 'issue' && live) notice(event.stage === 'speech' ? words().speechFailed : words().reconnect, true);
+    if (event.type === 'issue' && live) notice(event.stage === 'speech' ? words().speechFailed : event.stage === 'recognition' ? recognitionDelay[locale] : words().reconnect, true);
   };
   events.onerror = () => { if (closed || denied) return; lastEventAt = 0; notice(words().reconnect, true); void recover(); };
   void recover(); timer = setInterval(recover, 2500);

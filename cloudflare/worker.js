@@ -138,7 +138,7 @@ export class StageSession extends DurableObject {
         if (!operator) throw error(401, 'Operator access required');
         const viewerUrl = `${url.origin}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
-        return json({ ...this.state(), lastIssue: this.lastIssue, viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
+        return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null, viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
           liveReady: providerStatus(this.config).ready, providers: providerStatus(this.config), languages,
           topics, termCount: terms.length, publicReady: true, ttsProvider: this.config.ttsProvider });
       }
@@ -199,6 +199,7 @@ export class StageSession extends DurableObject {
             onPartial: text => { if (this.active === source) this.broadcast({ type: 'partial', text: text.slice(0, 4000) }); },
             onText: text => { if (this.active === source) void this.submit(text); },
             onStatus: phase => { if (this.active === source) { this.phase = phase; this.status(); } },
+            onWarning: message => { if (this.active === source) { socket.send(JSON.stringify({ type: 'warning', message })); this.broadcast({ type: 'issue', stage: 'recognition', message }); } },
             onError: message => { if (this.active === source) this.halt(message); },
             onClosed: async () => {
               if (this.active !== source) return; this.phase = 'finishing'; this.status();

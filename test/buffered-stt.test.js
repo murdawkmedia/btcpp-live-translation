@@ -4,11 +4,12 @@ import { connectBufferedTranscriber } from '../src/buffered-stt.js';
 
 const speech = () => { const frame = Buffer.alloc(3200); for (let i = 0; i < frame.length; i += 2) frame.writeInt16LE(6000, i); return frame; };
 function capture(runAI) {
-  const texts = []; let done, fail;
+  const texts = [], warnings = [], statuses = []; let done, fail;
   const closed = new Promise((resolve, reject) => { done = resolve; fail = reject; });
+  closed.catch(() => {});
   const bridge = connectBufferedTranscriber({ sttProvider: 'workers-ai', runAI }, { topic: 'privacy', context: 'Cashu, Nostr and Bitcoin',
-    onReady() {}, onPartial() {}, onText: text => texts.push(text), onError: message => fail(Error(message)), onClosed: done });
-  return { bridge, texts, closed };
+    onReady() {}, onPartial() {}, onStatus: status => statuses.push(status), onWarning: message => warnings.push(message), onText: text => texts.push(text), onError: message => fail(Error(message)), onClosed: done });
+  return { bridge, texts, warnings, statuses, closed };
 }
 
 test('buffered recognition keeps overlapping audio and emits each timed word once', async () => {
@@ -105,4 +106,35 @@ test('rejected recognition credentials are not retried', async () => {
   const failure = assert.rejects(closed, /access was rejected/);
   for (let i = 0; i < 5; i++) bridge.send(speech()); bridge.finish(); await failure;
   assert.equal(calls, 1);
+});
+
+test('a slow cloud request coalesces overlapping pending audio and drains every word on Stop', async () => {
+  let release; const gate = new Promise(resolve => { release = resolve; }); const lengths = []; let calls = 0;
+  const { bridge, texts, closed, statuses } = capture(async (_, input) => {
+    const audio = Buffer.from(input.audio, 'base64'), firstFrame = audio.readInt16LE(44) - 1000, count = (audio.length - 44) / 3200;
+    lengths.push(count / 10); if (++calls === 1) await gate;
+    const words = [];
+    for (let frame = Math.ceil(firstFrame / 10) * 10; frame < firstFrame + count; frame += 10)
+      words.push({ word: `w${frame / 10}.`, start: (frame - firstFrame) / 10, end: (frame - firstFrame) / 10 + 0.2 });
+    return { text: words.map(word => word.word).join(' '), segments: [{ words }] };
+  });
+  for (let i = 0; i < 200; i++) { const frame = Buffer.alloc(3200); for (let n = 0; n < frame.length; n += 2) frame.writeInt16LE(1000 + i, n); bridge.send(frame); }
+  release(); await new Promise(resolve => setImmediate(resolve)); bridge.finish(); await closed;
+  assert.equal(texts.join(' '), Array.from({ length: 20 }, (_, i) => `w${i}.`).join(' '));
+  assert.ok(lengths.some(seconds => seconds > 13), 'Overlapping pending windows should share one request');
+  assert.ok(statuses.includes('reconnecting')); assert.equal(statuses.at(-1), 'live');
+});
+
+test('an extended cloud slowdown keeps capture open with bounded audio and warns about skipped speech', async () => {
+  let release; const gate = new Promise(resolve => { release = resolve; }); let calls = 0; const lengths = [];
+  const { bridge, closed, warnings } = capture(async (_, input) => {
+    lengths.push((Buffer.from(input.audio, 'base64').length - 44) / 32000); if (++calls === 1) await gate;
+    return { text: '' };
+  });
+  for (let i = 0; i < 600; i++) assert.equal(bridge.send(speech()), true);
+  const stats = bridge.stats();
+  assert.ok(stats.pendingWindows <= 3); assert.ok(stats.bufferedSeconds <= 30);
+  assert.ok(stats.droppedAudioSeconds > 0); assert.ok(warnings.some(message => /missing|skipp/i.test(message)));
+  bridge.finish(); release(); await closed;
+  assert.ok(lengths.every(seconds => seconds <= 30));
 });

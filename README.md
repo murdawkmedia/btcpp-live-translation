@@ -116,6 +116,10 @@ supported. Cloud translation protects Bitcoin units with temporary identifiers,
 restores their exact spellings and rejects missing or duplicated identifiers.
 A failed cloud translation is retried once; persistent failure is reported.
 
+Cloud recognition coalesces overlapping pending windows during a slowdown instead
+of closing capture when its small FIFO fills. Pending source audio stays bounded
+to 30 seconds; longer delays can skip speech and produce a visible warning.
+
 Captions have their own ordered queue. Speech runs separately and cannot hold
 back the next caption; queued voice is bounded and older audio is skipped if it
 falls behind. Queues, caption history and audio memory are bounded. Text remains

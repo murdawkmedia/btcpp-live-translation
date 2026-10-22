@@ -50,6 +50,28 @@ test('a failed live session reports its reason over capture and retains it for t
   assert.equal(listener.lastIssue, undefined);
 });
 
+test('a delayed cloud recognizer keeps the source socket open and reports bounded catch-up state', async t => {
+  let release; const gate = new Promise(resolve => { release = resolve; }); let calls = 0;
+  const { base, request } = await start(t, { sttProvider: 'workers-ai', translationProvider: 'workers-ai', ttsProvider: 'workers-ai', runAI: async () => { if (++calls === 1) await gate; return { text: '' }; } });
+  const ws = new WebSocket(base.replace('http:', 'ws:') + '/api/capture', { headers: { Cookie: 'btcpp_operator=operator-test-capability', Origin: base } });
+  t.after(() => { release(); ws.terminate(); }); await once(ws, 'open');
+  const controls = []; ws.on('message', data => controls.push(JSON.parse(data.toString())));
+  const ready = once(ws, 'message'); ws.send(JSON.stringify({ type: 'start' })); await ready;
+  const frame = Buffer.alloc(3200); for (let i = 0; i < frame.length; i += 2) frame.writeInt16LE(6000, i);
+  for (let i = 0; i < 600; i++) ws.send(frame);
+  let state;
+  for (let i = 0; i < 100; i++) {
+    state = await (await request('/api/config', { auth: true })).json();
+    if (state.recognition?.droppedAudioSeconds > 0) break;
+    await new Promise(resolve => setTimeout(resolve, 5));
+  }
+  assert.equal(ws.readyState, WebSocket.OPEN); assert.equal(state.phase, 'reconnecting');
+  assert.ok(state.recognition.coalescedWindows > 0); assert.ok(state.recognition.bufferedSeconds <= 30);
+  assert.ok(controls.some(event => event.type === 'warning'));
+  const viewer = await (await request('/api/listener?token=viewer-test-capability')).json(); assert.equal(viewer.recognition, undefined);
+  const closed = once(ws, 'close'); ws.send(JSON.stringify({ type: 'stop' })); release(); await closed;
+});
+
 test('attendee snapshots are read-only, session-scoped and empty off air', async t => {
   const { request, app } = await start(t, { rehearsalInterval: 10000 });
   assert.equal((await request('/api/listener')).status, 401);

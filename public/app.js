@@ -22,7 +22,7 @@ function renderCaption(segment) {
 function renderStatus(update = {}) {
   serverState = { ...serverState, ...update };
   const local = localPhase !== 'idle';
-  const state = local ? { ...serverState, phase: localPhase, mode: localMode } : serverState;
+  const state = local ? { ...serverState, phase: localPhase === 'live' && serverState.phase === 'reconnecting' ? 'reconnecting' : localPhase, mode: localMode } : serverState;
   const running = local || ['live', 'connecting', 'reconnecting', 'finishing'].includes(state.phase);
   $('start').disabled = running || !config.liveReady; $('rehearsal').disabled = running; $('stop').disabled = !running;
   $('soundcheck').disabled = running;
@@ -34,7 +34,7 @@ function renderStatus(update = {}) {
   if (state.phase === 'live' && state.mode === 'rehearsal') notice('Local rehearsal: fixed sample captions and a test tone. No live transcription or Korean speech synthesis is being tested.');
   if (state.phase === 'live' && state.mode === 'live') notice('Receiving Main Stage audio. Attendees can read translated captions and enable audio.');
   if (state.phase === 'connecting') notice('Connecting to the transcription service…');
-  if (state.phase === 'reconnecting') notice('Recognition reconnecting. Briefly buffering incoming audio…', true);
+  if (state.phase === 'reconnecting') notice('Recognition is delayed or reconnecting. Buffering speech and catching up…', true);
   if (state.phase === 'finishing') notice('Finishing the last captured speech…');
   const empty = $('captions').querySelector('.empty');
   if (empty) {
@@ -164,6 +164,7 @@ $('start').addEventListener('click', async () => {
     ws.onmessage = ({ data }) => {
       const event = JSON.parse(data);
       if (socket === ws && event.type === 'issue') { lastIssue = event.message; notice(lastIssue, true); }
+      if (socket === ws && event.type === 'warning') notice(event.message, true);
     };
     ws.onclose = event => {
       if (socket !== ws) return;

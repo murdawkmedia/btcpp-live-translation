@@ -116,7 +116,7 @@ export function createApp(config = {}) {
         if (!operator(req)) throw fail(401, 'Operator access required');
         const origin = config.publicBaseUrl || `http://${server.address().address === '::1' ? '[::1]' : 'localhost'}:${server.address().port}`;
         const viewerUrl = `${origin.replace(/\/$/, '')}/listen?token=${viewerToken}`;
-        return json(res, { ...state(), lastIssue, liveReady, topics, languages, providers, termCount: terms.length,
+        return json(res, { ...state(), lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady, topics, languages, providers, termCount: terms.length,
           ttsProvider: config.ttsProvider || 'xai', publicReady: Boolean(config.publicBaseUrl), viewerUrl,
           qr: await QRCode.toDataURL(viewerUrl, { width: 200, margin: 1 }) });
       }
@@ -187,6 +187,7 @@ export function createApp(config = {}) {
             onPartial: text => { if (active === source) broadcast({ type: 'partial', text: text.slice(0, 4000) }); },
             onText: text => { if (active === source) submit(text); },
             onStatus: value => { if (active === source) { phase = value; status(); } },
+            onWarning: message => { if (active === source) { socket.send(JSON.stringify({ type: 'warning', message })); broadcast({ type: 'issue', stage: 'recognition', message }); } },
             onError: message => { if (active === source) halt(message); },
             onClosed: async () => {
               if (active !== source) return;

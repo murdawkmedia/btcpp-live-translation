@@ -113,3 +113,11 @@ test('English transcription appears before translation and merges into the same 
   assert.equal(ui.node('captions').children.length, 1);
   assert.equal(ui.node('captions').children[0].children[0].textContent, '비트코인.');
 });
+
+test('a recognition gap warns attendees without stopping caption delivery', async () => {
+  const ui = await phone();
+  ui.emit({ type: 'issue', stage: 'recognition', message: 'Recognition is catching up. Some earlier speech may be missing.' });
+  assert.match(ui.node('notice').textContent, /speech.*missing/i);
+  ui.emit({ type: 'caption', segment: segment('계속합니다.', 2) });
+  assert.equal(ui.node('captions').children.length, 2);
+});

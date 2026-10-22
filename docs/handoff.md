@@ -83,8 +83,13 @@ A cloud recognition window gets at most two attempts, including a retry for
 missing word timestamps before overlap assembly mutates its state. Authentication
 and invalid-request failures are not retried when the provider supplies their HTTP
 status. Cancellation prevents further attempts; local processing remains a single
-attempt. Repeated failure still stops capture visibly, and audio/translation queues
-retain their bounds. This does not provide gapless recovery across a lost socket.
+attempt. Repeated inference failure still stops capture visibly. Cloud pending audio windows
+coalesce when recognition falls behind: overlapping samples are submitted once
+in a merged window, with at most three pending windows and 30 seconds of source
+span. A temporary stall can catch up without closing the source socket. A longer
+stall discards older pending audio with a visible warning; this is not gapless
+recovery. Local recognition keeps its existing bounded FIFO/overflow behavior.
+Operator snapshots expose only timing/queue counters for recognition diagnostics.
 
 The capture ready message includes its session ID. Application failures send a
 safe issue message on the capture WebSocket before closing with code 1011. The

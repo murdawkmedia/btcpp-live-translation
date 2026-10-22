@@ -11,10 +11,12 @@ export function wav(pcm) {
   return Buffer.concat([h, pcm]);
 }
 
-export function connectBufferedTranscriber(config, { topic, context = '', onReady, onText, onPartial, onError, onClosed }) {
+export function connectBufferedTranscriber(config, { topic, context = '', onReady, onText, onPartial, onError, onClosed, onStatus = () => {}, onWarning = () => {} }) {
   let chunks = [], size = 0, quiet = 0, hasSpeech = false, ended = false, processing = false, closed = false;
   let lead = Buffer.alloc(0), received = 0, start = 0, timed = false, fresh = 0;
   const queue = [], controller = new AbortController();
+  let requests = 0, retries = 0, coalescedWindows = 0, droppedAudioSeconds = 0, catchingUp = false, gapWarned = false;
+  let requestStartedAt = 0, lastRequestMs = 0;
   const cloud = config.sttProvider === 'workers-ai', assembler = new TimedTranscriptAssembler({ preferSentences: true });
   const hints = selectHints(topic, { limit: cloud ? 20 : 50, maxLength: cloud ? 40 : 50, context });
   const prefix = 'English Bitcoin technical conference. Technical spellings: ';
@@ -34,6 +36,7 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
     const attempts = cloud ? 2 : 1;
     for (let attempt = 0; attempt < attempts; attempt++) {
       if (controller.signal.aborted) throw Error('Recognition cancelled');
+      requests++; if (attempt) retries++; requestStartedAt = Date.now();
       try {
         let result;
         if (cloud) {
@@ -52,7 +55,7 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
         return { text, words };
       } catch (error) {
         if (attempt + 1 === attempts || controller.signal.aborted || [400, 401, 403].includes(Number(error.status || error.statusCode))) throw error;
-      }
+      } finally { lastRequestMs = Date.now() - requestStartedAt; requestStartedAt = 0; }
     }
   }
   async function run() {
@@ -70,12 +73,34 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
         if (!controller.signal.aborted && text && text.length <= 4000) { onPartial(''); onText(text); }
       } catch (error) { if (!controller.signal.aborted) fail(cloud ? failureMessage(error) : 'Recognition failed. Check the selected model service.'); }
     }
+    if (catchingUp && !controller.signal.aborted) {
+      catchingUp = false; gapWarned = false;
+      if (!ended) onStatus('live');
+    }
     processing = false; if (ended) close();
+  }
+  function enqueue(job) {
+    const jobs = [...queue, job];
+    const first = Math.min(...jobs.map(item => Math.round(item.start * 32000)));
+    const end = Math.max(...jobs.map(item => Math.round(item.start * 32000) + item.pcm.length));
+    if (queue.length < 3 && (!cloud || end - first <= 30 * 32000)) { queue.push(job); return; }
+    if (!cloud) return fail('Recognition is falling behind. Capture stopped.');
+    // Pending windows share most of their samples. Merge their union rather
+    // than transcribing stale overlaps separately. Keep at most 30 seconds.
+    const begin = Math.max(first, end - 30 * 32000), pcm = Buffer.alloc(end - begin);
+    for (const item of jobs) {
+      const position = Math.round(item.start * 32000), from = Math.max(begin, position), to = Math.min(end, position + item.pcm.length);
+      if (to > from) item.pcm.copy(pcm, from - begin, from - position, to - position);
+    }
+    queue.splice(0, queue.length, { pcm, start: begin / 32000, final: job.final }); coalescedWindows++;
+    droppedAudioSeconds += (begin - first) / 32000;
+    if (!catchingUp) { catchingUp = true; if (!ended) onStatus('reconnecting'); }
+    if (begin > first && !gapWarned) { gapWarned = true; onWarning('Recognition is catching up. Some earlier speech may be missing.'); }
   }
   function flush(final) {
     if (hasSpeech && size >= 6400) {
-      if (queue.length >= 3) return fail('Recognition is falling behind. Capture stopped.');
-      const pcm = Buffer.concat(chunks); queue.push({ pcm, start, final });
+      const pcm = Buffer.concat(chunks); enqueue({ pcm, start, final });
+      if (controller.signal.aborted) return;
       if (cloud && !final) {
         // Revisit enough context to recognize a term or phrase across a cut.
         // First result at five seconds, then every three seconds; at most
@@ -91,6 +116,11 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
   }
   queueMicrotask(() => { if (!ended) onReady(); });
   return {
+    stats() {
+      const first = Math.min(...queue.map(job => job.start)), end = Math.max(...queue.map(job => job.start + job.pcm.length / 32000));
+      return { requests, retries, coalescedWindows, droppedAudioSeconds, pendingWindows: queue.length, bufferedSeconds: queue.length ? end - first : 0,
+        inFlight: processing, activeRequestMs: requestStartedAt ? Date.now() - requestStartedAt : 0, lastRequestMs };
+    },
     send(frame) {
       if (ended) return false;
       const data = Buffer.from(frame), position = received; received += data.length; let sum = 0;
@@ -105,7 +135,7 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
       else if (quiet >= 22400) flush(true);
       return !ended;
     },
-    finish() { if (ended) return; flush(true); ended = true; if (!processing && !queue.length) close(); },
+    finish() { if (ended) return; ended = true; flush(true); if (!processing && !queue.length) close(); },
     abort() { ended = true; controller.abort(); chunks = []; lead = Buffer.alloc(0); queue.length = 0; }
   };
 }
