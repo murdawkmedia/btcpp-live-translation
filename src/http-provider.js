@@ -35,7 +35,7 @@ export function createLiveProvider(config = {}) {
       }
       const raw = payload.response ?? payload.choices?.[0]?.message?.content;
       const output = typeof raw === 'string' ? raw.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim() : '';
-      if (!output || output.length > 8000) throw Error('Invalid translation response');
+      if (!output || output.length > 8000 || /^<think\b/i.test(output)) throw Error('Invalid translation response');
       return output;
     },
     async speak(text, signal) {

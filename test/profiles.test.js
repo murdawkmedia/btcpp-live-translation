@@ -67,3 +67,15 @@ test('ElevenLabs realtime uses PCM chunks, bounded keyterms and committed transc
   assert.equal(Buffer.from(input.audio_base_64, 'base64').length, 3200);
   assert.deepEqual(texts, ['FROST protects Bitcoin keys.']);
 });
+
+test('unfinished model reasoning cannot become a translated caption or spoken audio', async t => {
+  const server = createServer((req, res) => {
+    req.resume(); res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify({ choices: [{ message: { content: '<think>I need to decide which words to use' } }] }));
+  });
+  server.listen(0, '127.0.0.1'); await once(server, 'listening');
+  t.after(() => { server.closeAllConnections(); server.close(); });
+  const provider = adapters.createLiveProvider({ translationProvider: 'local', targetLanguage: 'ko',
+    translationBase: `http://127.0.0.1:${server.address().port}`, translationModel: 'fixture-reasoning-model' });
+  await assert.rejects(provider.translate('Bitcoin.', new AbortController().signal), /Invalid translation/);
+});
