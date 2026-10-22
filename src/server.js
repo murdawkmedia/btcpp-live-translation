@@ -21,7 +21,7 @@ export function createApp(config = {}) {
   const providers = providerStatus(config), liveReady = providers.ready;
   let targetLanguage = config.targetLanguage || 'ko';
   const subscribers = new Set();
-  let pipeline, sessionId, active = null, mode = 'idle', phase = 'idle', closed = false;
+  let pipeline, sessionId, lastIssue = null, active = null, mode = 'idle', phase = 'idle', closed = false;
   const operator = req => same((req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith('btcpp_operator='))?.slice(15), operatorToken);
   const viewer = (req, url) => operator(req) || same(url.searchParams.get('token'), viewerToken);
   const originAllowed = req => {
@@ -44,16 +44,20 @@ export function createApp(config = {}) {
   };
   const status = () => { const { history, ...value } = state(); broadcast({ type: 'status', ...value }); };
   const replacePipeline = provider => {
-    pipeline?.cancel(); const p = new Pipeline(provider); pipeline = p; sessionId = randomUUID();
+    pipeline?.cancel(); const p = new Pipeline(provider); pipeline = p; sessionId = randomUUID(); lastIssue = null;
     p.on('event', event => { if (pipeline === p) broadcast({ ...event, sessionId }); });
     broadcast({ type: 'reset', sessionId });
   };
   replacePipeline(createRehearsalProvider());
   const halt = (message = '') => {
     const source = active; active = null;
+    if (message) {
+      lastIssue = { stage: 'capture', message, sessionId, at: Date.now() };
+      if (source?.socket?.readyState === WebSocket.OPEN) source.socket.send(JSON.stringify({ type: 'issue', ...lastIssue }));
+    }
     if (source?.timer) clearTimeout(source.timer);
     source?.bridge?.abort();
-    if (source?.socket?.readyState === WebSocket.OPEN) source.socket.close(1000, 'Session stopped');
+    if (source?.socket?.readyState === WebSocket.OPEN) source.socket.close(message ? 1011 : 1000, message ? 'Session failed' : 'Session stopped');
     pipeline.cancel(); phase = message ? 'error' : 'idle';
     if (message) broadcast({ type: 'issue', stage: 'capture', message });
     status();
@@ -112,7 +116,7 @@ export function createApp(config = {}) {
         if (!operator(req)) throw fail(401, 'Operator access required');
         const origin = config.publicBaseUrl || `http://${server.address().address === '::1' ? '[::1]' : 'localhost'}:${server.address().port}`;
         const viewerUrl = `${origin.replace(/\/$/, '')}/listen?token=${viewerToken}`;
-        return json(res, { ...state(), liveReady, topics, languages, providers, termCount: terms.length,
+        return json(res, { ...state(), lastIssue, liveReady, topics, languages, providers, termCount: terms.length,
           ttsProvider: config.ttsProvider || 'xai', publicReady: Boolean(config.publicBaseUrl), viewerUrl,
           qr: await QRCode.toDataURL(viewerUrl, { width: 200, margin: 1 }) });
       }
@@ -179,7 +183,7 @@ export function createApp(config = {}) {
           mode = 'live'; phase = 'connecting'; replacePipeline(createLiveProvider({ ...config, targetLanguage })); status();
           source.bridge = connectTranscriber(config, { topic: topics.includes(message.topic) ? message.topic : 'protocol',
             context: String(message.context || '').slice(0, 1000),
-            onReady: () => { if (active === source) { phase = 'live'; socket.send(JSON.stringify({ type: 'ready' })); status(); } },
+            onReady: () => { if (active === source) { phase = 'live'; socket.send(JSON.stringify({ type: 'ready', sessionId })); status(); } },
             onPartial: text => { if (active === source) broadcast({ type: 'partial', text: text.slice(0, 4000) }); },
             onText: text => { if (active === source) submit(text); },
             onStatus: value => { if (active === source) { phase = value; status(); } },

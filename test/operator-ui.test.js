@@ -27,7 +27,7 @@ async function desk({ chooser, ready = true } = {}) {
     send(data) {
       this.sent.push(data);
       if (typeof data === 'string' && JSON.parse(data).type === 'start' && ready)
-        queueMicrotask(() => this.onmessage?.({ data: JSON.stringify({ type: 'ready' }) }));
+        queueMicrotask(() => this.onmessage?.({ data: JSON.stringify({ type: 'ready', sessionId: 'session-a' }) }));
     }
     close() { if (this.readyState === 3) return; this.readyState = 3; this.onclose?.(); }
   }
@@ -140,4 +140,19 @@ test('a new local session clears old caption IDs even when its reset event is lo
   assert.equal(ui.node('captions').children.length, 1);
   assert.equal(ui.node('captions').children[0].children[0].textContent, 'New sentence.');
   await ui.click('stop');
+});
+
+test('capture failure details survive a missing caption event stream', async () => {
+  const ui = await desk(); await ui.click('start'); ui.disconnect();
+  const ws = ui.sockets[0];
+  ws.onmessage({ data: JSON.stringify({ type: 'issue', stage: 'capture', message: 'Recognition service temporarily unavailable.' }) });
+  ws.close();
+  assert.match(ui.node('notice').textContent, /Recognition service temporarily unavailable/);
+});
+
+test('an abrupt socket close recovers the retained operator error without SSE', async () => {
+  const ui = await desk(); await ui.click('start'); ui.disconnect();
+  ui.config.sessionId = 'session-a'; ui.config.lastIssue = { sessionId: 'session-a', message: 'Recognition returned text without word timings after retry.' };
+  ui.config.phase = 'error'; ui.sockets[0].close(); await tick();
+  assert.match(ui.node('notice').textContent, /word timings/);
 });

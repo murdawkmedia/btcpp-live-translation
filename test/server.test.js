@@ -30,6 +30,26 @@ test('capabilities, origins, body limits and audio access are enforced', async t
   assert.equal(config.termCount, 345);
 });
 
+test('a failed live session reports its reason over capture and retains it for the operator', async t => {
+  const { base, request } = await start(t, { sttProvider: 'workers-ai', translationProvider: 'workers-ai', ttsProvider: 'workers-ai', runAI: async () => { throw Error('private upstream details'); } });
+  const ws = new WebSocket(base.replace('http:', 'ws:') + '/api/capture', { headers: { Cookie: 'btcpp_operator=operator-test-capability', Origin: base } });
+  t.after(() => ws.terminate()); await once(ws, 'open');
+  const controls = []; ws.on('message', data => controls.push(JSON.parse(data.toString())));
+  const ready = once(ws, 'message'); ws.send(JSON.stringify({ type: 'start' })); await ready;
+  const closed = once(ws, 'close');
+  const frame = Buffer.alloc(3200); for (let i = 0; i < frame.length; i += 2) frame.writeInt16LE(6000, i);
+  for (let i = 0; i < 50; i++) ws.send(frame);
+  await closed;
+  const issue = controls.find(event => event.type === 'issue');
+  assert.match(issue?.message || '', /Recognition/);
+  const state = await (await request('/api/config', { auth: true })).json();
+  assert.equal(state.lastIssue?.message, issue.message);
+  assert.equal(state.lastIssue?.sessionId, state.sessionId);
+  assert.equal(JSON.stringify(state.lastIssue).includes('private upstream'), false);
+  const listener = await (await request('/api/listener?token=viewer-test-capability')).json();
+  assert.equal(listener.lastIssue, undefined);
+});
+
 test('attendee snapshots are read-only, session-scoped and empty off air', async t => {
   const { request, app } = await start(t, { rehearsalInterval: 10000 });
   assert.equal((await request('/api/listener')).status, 401);

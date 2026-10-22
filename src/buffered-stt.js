@@ -22,10 +22,18 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
   const prompt = cloud ? prefix + hints.join(', ') + '.' : hints.join(', ');
   const close = () => { if (!closed) { closed = true; onClosed?.(); } };
   const fail = message => { controller.abort(); ended = true; chunks = []; queue.length = 0; onError(message); close(); };
-  async function run() {
-    if (processing) return; processing = true;
-    while (queue.length && !controller.signal.aborted) {
-      const job = queue.shift(), audio = wav(job.pcm);
+  const failureMessage = error => {
+    if (error.code === 'missing_word_timing') return 'Recognition returned text without word timings after retry. Capture stopped to avoid repeating speech.';
+    const status = Number(error.status || error.statusCode);
+    if (status === 429) return 'Recognition service rate limit reached after retry. Wait briefly, then restart capture.';
+    if ([401, 403].includes(status)) return 'Recognition service access was rejected. Check the configured provider.';
+    if (status >= 500 && status <= 599) return `Recognition service returned HTTP ${status} after retry. Restart capture when the service recovers.`;
+    return 'Recognition failed after retry. Check the selected model service and restart capture.';
+  };
+  async function recognize(job, audio) {
+    const attempts = cloud ? 2 : 1;
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      if (controller.signal.aborted) throw Error('Recognition cancelled');
       try {
         let result;
         if (cloud) {
@@ -38,16 +46,29 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
             signal: AbortSignal.any([controller.signal, AbortSignal.timeout(30000)]) });
           result = JSON.parse((await bytes(response, 128000)).toString());
         }
-        let text = result.text?.trim();
+        const text = result.text?.trim() || '';
+        const words = (result.segments || []).flatMap(segment => segment.words || []);
+        if (cloud && text && !words.length && (!job.final || timed)) throw Object.assign(Error('Missing word timing'), { code: 'missing_word_timing' });
+        return { text, words };
+      } catch (error) {
+        if (attempt + 1 === attempts || controller.signal.aborted || [400, 401, 403].includes(Number(error.status || error.statusCode))) throw error;
+      }
+    }
+  }
+  async function run() {
+    if (processing) return; processing = true;
+    while (queue.length && !controller.signal.aborted) {
+      const job = queue.shift(), audio = wav(job.pcm);
+      try {
+        let { text, words } = await recognize(job, audio);
         if (cloud && text) {
-          const words = (result.segments || []).flatMap(segment => segment.words || []);
           if (words.length) {
             timed = true;
             text = assembler.accept(words, job.start, job.final ? Infinity : job.start + job.pcm.length / 32000 - 0.6);
-          } else if (!job.final || timed) throw Error('Overlapping recognition needs word timing');
+          }
         }
         if (!controller.signal.aborted && text && text.length <= 4000) { onPartial(''); onText(text); }
-      } catch { if (!controller.signal.aborted) fail('Recognition failed. Check the selected model service.'); }
+      } catch (error) { if (!controller.signal.aborted) fail(cloud ? failureMessage(error) : 'Recognition failed. Check the selected model service.'); }
     }
     processing = false; if (ended) close();
   }

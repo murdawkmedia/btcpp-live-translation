@@ -44,6 +44,7 @@ function renderStatus(update = {}) {
   }
 }
 function recoverSnapshot(state) {
+  if (state.lastIssue && state.lastIssue.sessionId === state.sessionId) lastIssue = state.lastIssue.message;
   for (const segment of state.history || []) renderCaption(segment);
   const finished = localPhase === 'finishing' && ['idle', 'error'].includes(state.phase);
   if (finished) { localPhase = 'idle'; localMode = 'idle'; }
@@ -149,22 +150,31 @@ $('start').addEventListener('click', async () => {
     if (id !== attempt) { await selected.stop(); return; }
     capture = selected; localPhase = 'connecting'; renderStatus();
     $('input-tag').textContent = 'INPUT SELECTED';
-    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/capture`); socket = ws;
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/capture`); socket = ws; let captureSession;
     await new Promise((resolve, reject) => {
       const timer = setTimeout(() => reject(Error('Live connection timed out. Stop and try again.')), 12000);
       const done = (error) => { clearTimeout(timer); error ? reject(error) : resolve(); };
       ws.onopen = () => ws.send(JSON.stringify({ type: 'start', topic: $('topic').value, context: $('context').value }));
-      ws.onmessage = ({ data }) => { if (JSON.parse(data).type === 'ready') done(); };
+      ws.onmessage = ({ data }) => { const event = JSON.parse(data); if (event.type === 'ready') { captureSession = event.sessionId; done(); } };
       ws.onerror = () => done(Error('Capture connection failed. Check the connection and try again.'));
       ws.onclose = () => done(Error('Capture connection closed before becoming ready.'));
     });
     if (id !== attempt) return;
     $('captions').replaceChildren(); $('partial').textContent = ''; $('processing').textContent = 'WAITING FOR TRANSCRIPT';
-    ws.onclose = () => {
+    ws.onmessage = ({ data }) => {
+      const event = JSON.parse(data);
+      if (socket === ws && event.type === 'issue') { lastIssue = event.message; notice(lastIssue, true); }
+    };
+    ws.onclose = event => {
       if (socket !== ws) return;
-      const old = capture; capture = null; socket = null; ++attempt; localPhase = 'idle'; localMode = 'idle';
+      const old = capture; capture = null; socket = null; const endedAttempt = ++attempt; localPhase = 'idle'; localMode = 'idle';
       void old?.stop(); $('meter').value = 0; $('level-label').textContent = '−∞ dB'; $('input-tag').textContent = 'DISCONNECTED';
-      renderStatus({ phase: 'error' }); notice(lastIssue || 'Live audio connection closed. Choose audio & go live to try again.', true);
+      renderStatus({ phase: 'error' }); notice(lastIssue || `Live audio connection closed${event?.code ? ` (code ${event.code})` : ''}. Choose audio & go live to try again.`, true);
+      if (!lastIssue && captureSession) void api('/api/config', undefined, AbortSignal.timeout(5000)).then(state => {
+        if (endedAttempt === attempt && state.sessionId === captureSession && state.lastIssue?.sessionId === captureSession) {
+          lastIssue = state.lastIssue.message; notice(lastIssue, true);
+        }
+      }).catch(() => {});
     };
     await selected.connect(buffer => {
       if (id !== attempt) return;

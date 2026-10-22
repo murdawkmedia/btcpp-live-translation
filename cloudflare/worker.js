@@ -62,14 +62,18 @@ export class StageSession extends DurableObject {
   }
   status() { const { history, ...state } = this.state(); this.broadcast({ type: 'status', ...state }); }
   replace(provider) {
-    this.pipeline?.cancel(); const pipeline = new Pipeline(provider); this.pipeline = pipeline; this.sessionId = randomUUID();
+    this.pipeline?.cancel(); const pipeline = new Pipeline(provider); this.pipeline = pipeline; this.sessionId = randomUUID(); this.lastIssue = null;
     pipeline.on('event', event => { if (this.pipeline === pipeline) this.broadcast({ ...event, sessionId: this.sessionId }); });
     this.broadcast({ type: 'reset', sessionId: this.sessionId });
   }
   halt(message = '') {
     const source = this.active; this.active = null;
+    if (message) {
+      this.lastIssue = { stage: 'capture', message, sessionId: this.sessionId, at: Date.now() };
+      try { source?.socket?.send(JSON.stringify({ type: 'issue', ...this.lastIssue })); } catch {}
+    }
     clearTimeout(source?.timer); clearTimeout(source?.startTimer); source?.bridge?.abort();
-    try { source?.socket?.close(1000, 'Session stopped'); } catch {}
+    try { source?.socket?.close(message ? 1011 : 1000, message ? 'Session failed' : 'Session stopped'); } catch {}
     this.pipeline.cancel(); this.phase = message ? 'error' : 'idle';
     if (message) this.broadcast({ type: 'issue', stage: 'capture', message });
     this.status();
@@ -134,7 +138,7 @@ export class StageSession extends DurableObject {
         if (!operator) throw error(401, 'Operator access required');
         const viewerUrl = `${url.origin}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
-        return json({ ...this.state(), viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
+        return json({ ...this.state(), lastIssue: this.lastIssue, viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
           liveReady: providerStatus(this.config).ready, providers: providerStatus(this.config), languages,
           topics, termCount: terms.length, publicReady: true, ttsProvider: this.config.ttsProvider });
       }
@@ -191,7 +195,7 @@ export class StageSession extends DurableObject {
           this.replace(createLiveProvider({ ...this.config, targetLanguage: this.target })); this.status();
           void this.ctx.storage.setAlarm(Date.now() + 6 * 3600000);
           const handlers = { topic: topics.includes(message.topic) ? message.topic : 'protocol', context: String(message.context || '').slice(0, 1000),
-            onReady: () => { if (this.active === source) { this.phase = 'live'; socket.send(JSON.stringify({ type: 'ready' })); this.status(); } },
+            onReady: () => { if (this.active === source) { this.phase = 'live'; socket.send(JSON.stringify({ type: 'ready', sessionId: this.sessionId })); this.status(); } },
             onPartial: text => { if (this.active === source) this.broadcast({ type: 'partial', text: text.slice(0, 4000) }); },
             onText: text => { if (this.active === source) void this.submit(text); },
             onStatus: phase => { if (this.active === source) { this.phase = phase; this.status(); } },

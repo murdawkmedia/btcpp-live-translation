@@ -69,3 +69,40 @@ test('a continuous talk revisits bounded context instead of retaining all source
   assert.ok(lengths.length > 8);
   assert.ok(lengths.every(seconds => seconds <= 13));
 });
+
+test('one transient cloud recognition failure retries the same audio without ending capture', async () => {
+  let calls = 0;
+  const { bridge, texts, closed } = capture(async (_, input) => {
+    calls++;
+    if (calls === 1) throw Object.assign(Error('upstream fixture unavailable'), { status: 503 });
+    return { text: 'Bitcoin works.', segments: [{ words: [{ word: 'Bitcoin', start: 0, end: 1 }, { word: 'works.', start: 1, end: 2 }] }] };
+  });
+  for (let i = 0; i < 5; i++) bridge.send(speech());
+  bridge.finish(); await closed;
+  assert.equal(calls, 2); assert.deepEqual(texts, ['Bitcoin works.']);
+});
+
+test('a single malformed timing response can recover without losing its utterance', async () => {
+  let calls = 0;
+  const { bridge, texts, closed } = capture(async () => ++calls === 1 ? { text: 'Bitcoin works.' } :
+    { text: 'Bitcoin works.', segments: [{ words: [{ word: 'Bitcoin', start: 0, end: 1 }, { word: 'works.', start: 1, end: 2 }] }] });
+  for (let i = 0; i < 50; i++) bridge.send(speech());
+  await new Promise(resolve => setImmediate(resolve)); bridge.finish(); await closed;
+  assert.deepEqual(texts, ['Bitcoin works.']); assert.ok(calls >= 2);
+});
+
+test('persistent recognition failures stop after two attempts without exposing upstream details', async () => {
+  let calls = 0;
+  const { bridge, closed } = capture(async () => { calls++; throw Object.assign(Error('private upstream fixture text'), { status: 503 }); });
+  const failure = assert.rejects(closed, /Recognition.*503.*retry/);
+  for (let i = 0; i < 5; i++) bridge.send(speech()); bridge.finish(); await failure;
+  assert.equal(calls, 2);
+});
+
+test('rejected recognition credentials are not retried', async () => {
+  let calls = 0;
+  const { bridge, closed } = capture(async () => { calls++; throw Object.assign(Error('private auth response'), { status: 401 }); });
+  const failure = assert.rejects(closed, /access was rejected/);
+  for (let i = 0; i < 5; i++) bridge.send(speech()); bridge.finish(); await failure;
+  assert.equal(calls, 1);
+});

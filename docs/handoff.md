@@ -76,3 +76,21 @@ The attendee can display the translation, English or both without changing any
 server setting or adding provider calls. Interface language is independent, saved
 locally, and supports English plus the five target languages. One shared translated
 caption/audio stream still serves everyone. Both pages default to dark colors.
+
+## Recognition failure recovery
+
+A cloud recognition window gets at most two attempts, including a retry for
+missing word timestamps before overlap assembly mutates its state. Authentication
+and invalid-request failures are not retried when the provider supplies their HTTP
+status. Cancellation prevents further attempts; local processing remains a single
+attempt. Repeated failure still stops capture visibly, and audio/translation queues
+retain their bounds. This does not provide gapless recovery across a lost socket.
+
+The capture ready message includes its session ID. Application failures send a
+safe issue message on the capture WebSocket before closing with code 1011. The
+operator-only configuration snapshot retains the last capture issue in memory,
+scoped to the session; new sessions clear it. The desk uses that reason even when
+SSE is absent, with one bounded five-second snapshot request after an abrupt close.
+Fallback messages include the close code. Do not expose raw upstream exception
+text, credentials or transcript payloads through diagnostics. Attendee snapshots
+exclude the retained operator issue. No transcript journal is created.

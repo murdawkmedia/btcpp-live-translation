@@ -88,4 +88,14 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 30));
   }
   assert.equal((await fetch(origin + '/api/audio/1?token=viewer-fixture-only')).status, 409);
+  const failed = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
+  t.after(() => failed.terminate()); await once(failed, 'open');
+  const controls = []; failed.on('message', data => controls.push(JSON.parse(data.toString())));
+  const failureClose = once(failed, 'close'); failed.send(JSON.stringify({ type: 'invalid' }));
+  assert.equal((await failureClose)[0], 1011);
+  const issue = controls.find(event => event.type === 'issue'); assert.match(issue?.message || '', /Invalid capture control/);
+  const diagnostic = await (await fetch(origin + '/api/config', { headers: { Cookie: cookie } })).json();
+  assert.equal(diagnostic.lastIssue?.message, issue.message);
+  const publicState = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
+  assert.equal(publicState.lastIssue, undefined);
 });
