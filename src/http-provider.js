@@ -41,11 +41,13 @@ export function createLiveProvider(config = {}) {
     async speak(text, signal) {
       const provider = config.ttsProvider || 'xai';
       if (provider === 'workers-ai') {
-        const result = await config.runAI('@cf/myshell-ai/melotts', { prompt: text, lang: target });
+        const lang = ({ ko: 'kr', ja: 'jp' })[target] || target;
+        const result = await config.runAI('@cf/myshell-ai/melotts', { prompt: text, lang });
         const response = result instanceof Response ? result : result instanceof ReadableStream ? new Response(result) : null;
         const data = response ? await bytes(response) : result?.audio ? Buffer.from(result.audio, 'base64') : null;
         if (!data?.length) throw Error('Speech provider returned no audio');
-        return { data, mime: 'audio/mpeg' };
+        const isWav = data.subarray(0, 4).toString() === 'RIFF' && data.subarray(8, 12).toString() === 'WAVE';
+        return { data, mime: isWav ? 'audio/wav' : 'audio/mpeg' };
       }
       let response;
       if (provider === 'local') {

@@ -5,6 +5,28 @@ import { once } from 'node:events';
 import { WebSocketServer } from 'ws';
 const settings = await import('../src/config.js').catch(() => ({}));
 const adapters = await import('../src/providers.js');
+const { wav } = await import('../src/buffered-stt.js');
+
+test('Workers AI speech accepts Korean and Japanese through the model language codes', async () => {
+  for (const [targetLanguage, expected] of [['ko', 'kr'], ['ja', 'jp'], ['fr', 'fr']]) {
+    const provider = adapters.createLiveProvider({ ttsProvider: 'workers-ai', targetLanguage,
+      runAI: async (model, input) => {
+        assert.equal(model, '@cf/myshell-ai/melotts');
+        assert.equal(input.lang, expected);
+        return { audio: Buffer.from('fixture-speech').toString('base64') };
+      } });
+    assert.ok((await provider.speak('Fixture text.')).data.length);
+  }
+});
+
+test('Workers AI speech serves generated WAV bytes with their actual media type', async () => {
+  const data = wav(Buffer.alloc(6400));
+  const provider = adapters.createLiveProvider({ ttsProvider: 'workers-ai', targetLanguage: 'fr',
+    runAI: async () => new Response(data, { headers: { 'Content-Type': 'audio/mpeg' } }) });
+  const audio = await provider.speak('Fixture text.');
+  assert.equal(audio.mime, 'audio/wav');
+  assert.deepEqual(audio.data, data);
+});
 
 test('the portable runner defaults to local services without using present cloud keys', () => {
   assert.equal(typeof settings.configFromEnv, 'function');
