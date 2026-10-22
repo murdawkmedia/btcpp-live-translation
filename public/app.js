@@ -1,12 +1,15 @@
 import { chooseAudio } from './capture.js';
 const $ = id => document.getElementById(id);
-let config, terms = [], events, capture, socket, soundchecking = false;
+let config, terms = [], events, capture, socket;
+let localPhase = 'idle', localMode = 'idle', attempt = 0, serverState = { phase: 'idle', mode: 'idle' }, lastIssue = '';
+let lastEventAt = Date.now(), polling = false;
 const notice = (message, warning = false) => { $('notice').textContent = message; $('notice').classList.toggle('warning', warning); };
-async function api(path, body) {
-  const response = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+async function api(path, body, signal) {
+  const response = await fetch(path, { ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), ...(signal ? { signal } : {}) });
   const value = await response.json(); if (!response.ok) throw Error(value.error || 'Request failed'); return value;
 }
 function renderCaption(segment) {
+  if ($('captions').querySelector(`[data-id="${Number(segment.id)}"]`)) return;
   if ($('captions').querySelector('.empty')) $('captions').replaceChildren();
   const row = document.createElement('article'); row.className = 'caption-row'; row.dataset.id = segment.id;
   for (const [key, cls] of [['english', 'en'], ['korean', 'ko']]) {
@@ -16,20 +19,45 @@ function renderCaption(segment) {
   $('captions').scrollTop = $('captions').scrollHeight;
   $('processing').textContent = `${(segment.processingMs / 1000).toFixed(1)}s PROCESSING`;
 }
-function renderStatus(state) {
-  const running = soundchecking || ['live', 'connecting', 'reconnecting', 'finishing'].includes(state.phase);
+function renderStatus(update = {}) {
+  serverState = { ...serverState, ...update };
+  const local = localPhase !== 'idle';
+  const state = local ? { ...serverState, phase: localPhase, mode: localMode } : serverState;
+  const running = local || ['live', 'connecting', 'reconnecting', 'finishing'].includes(state.phase);
   $('start').disabled = running || !config.liveReady; $('rehearsal').disabled = running; $('stop').disabled = !running;
   $('soundcheck').disabled = running;
   $('target').disabled = running; $('topic').disabled = running; $('context').disabled = running;
   if (state.targetLanguage) { $('target').value = state.targetLanguage; $('target-code').textContent = state.targetLanguage.toUpperCase(); }
   $('status').textContent = state.phase === 'live' ? (state.mode === 'rehearsal' ? 'SAMPLE SESSION' : 'ON AIR') : state.phase.toUpperCase();
   $('status').classList.toggle('live', state.phase === 'live');
-  $('mode-label').textContent = state.mode === 'live' ? 'LIVE API SESSION' : 'REHEARSAL / FIXED TEXT + TEST TONE';
+  $('mode-label').textContent = state.mode === 'soundcheck' ? 'LOCAL SOUNDCHECK / NO TRANSLATION' : state.mode === 'live' ? 'LIVE API SESSION' : 'REHEARSAL / FIXED TEXT + TEST TONE';
   if (state.phase === 'live' && state.mode === 'rehearsal') notice('Local rehearsal: fixed sample captions and a test tone. No live transcription or Korean speech synthesis is being tested.');
   if (state.phase === 'live' && state.mode === 'live') notice('Receiving Main Stage audio. Attendees can read translated captions and enable audio.');
   if (state.phase === 'connecting') notice('Connecting to the transcription service…');
   if (state.phase === 'reconnecting') notice('Recognition reconnecting. Briefly buffering incoming audio…', true);
   if (state.phase === 'finishing') notice('Finishing the last captured speech…');
+  const empty = $('captions').querySelector('.empty');
+  if (empty) {
+    const checking = state.mode === 'soundcheck', live = state.phase === 'live' && state.mode === 'live';
+    empty.querySelector('h3').textContent = checking ? 'Soundcheck: audio only.' : live ? 'Listening for English speech.' : 'Ready when the speaker is.';
+    empty.querySelector('p').textContent = checking ? 'Stop the check, then choose audio & go live for translated captions.' : live ? 'The first caption takes a few seconds after speech starts.' : 'Choose an audio source or run a local rehearsal.';
+  }
+}
+function recoverSnapshot(state) {
+  for (const segment of state.history || []) renderCaption(segment);
+  const finished = localPhase === 'finishing' && ['idle', 'error'].includes(state.phase);
+  if (finished) { localPhase = 'idle'; localMode = 'idle'; }
+  renderStatus(state);
+  if (finished) notice(state.phase === 'error' ? lastIssue || 'The session stopped with an error. Choose audio & go live to retry.' : 'Session stopped. Choose audio & go live to start again.', state.phase === 'error');
+}
+async function recoverCaptions() {
+  if (polling || !['live', 'finishing'].includes(localPhase) || Date.now() - lastEventAt < 5000) return;
+  const id = attempt; polling = true;
+  try {
+    const state = await api('/api/config', undefined, AbortSignal.timeout(10000));
+    if (id === attempt) recoverSnapshot(state);
+  } catch { if (id === attempt) notice('Caption connection interrupted. Retrying; Stop remains available.', true); }
+  finally { polling = false; }
 }
 function renderTerms() {
   const query = $('term-search').value.toLowerCase();
@@ -56,15 +84,18 @@ async function openDesk() {
   if (!config.liveReady) notice('Local rehearsal is ready. Live capture needs the server’s provider configuration; see README.md.', true);
   events?.close(); events = new EventSource('/api/events');
   events.onmessage = ({ data }) => {
-    const event = JSON.parse(data);
-    if (event.type === 'snapshot') { for (const s of event.history) renderCaption(s); renderStatus(event); }
+    const event = JSON.parse(data); lastEventAt = Date.now();
+    if (event.type === 'snapshot') recoverSnapshot(event);
     if (event.type === 'reset') { $('captions').replaceChildren(); $('partial').textContent = ''; }
     if (event.type === 'caption') { renderCaption(event.segment); $('partial').textContent = ''; }
     if (event.type === 'partial') $('partial').textContent = event.text;
-    if (event.type === 'status') renderStatus(event);
-    if (event.type === 'issue') notice(event.message, true);
+    if (event.type === 'status') {
+      if (localPhase === 'finishing' && ['idle', 'error'].includes(event.phase)) { localPhase = 'idle'; localMode = 'idle'; }
+      renderStatus(event);
+    }
+    if (event.type === 'issue') { lastIssue = event.message; notice(event.message, true); }
   };
-  events.onerror = () => notice('Desk connection interrupted. Captions will reconnect automatically.', true);
+  events.onerror = () => { lastEventAt = 0; notice('Caption stream interrupted. Recovering current captions automatically.', true); };
 }
 $('login-form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -84,45 +115,71 @@ $('find-devices').addEventListener('click', async () => {
   } catch (error) { notice(`Audio device access: ${error.message}`, true); }
 });
 $('rehearsal').addEventListener('click', async () => { try { await api('/api/rehearsal', {}); } catch (error) { notice(error.message, true); } });
-async function stopCapture() {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: 'stop' }));
-  const old = capture; capture = null; await old?.stop(); $('meter').value = 0; $('level-label').textContent = '−∞ dB'; $('input-tag').textContent = 'DISCONNECTED';
-  if (soundchecking) { soundchecking = false; renderStatus({ phase: 'idle', mode: 'idle' }); notice('Soundcheck stopped.'); }
+async function stopCapture({ cancel = false } = {}) {
+  const wasLive = localMode === 'live' && localPhase === 'live', wasSoundcheck = localMode === 'soundcheck';
+  ++attempt; lastEventAt = 0;
+  const old = capture, oldSocket = socket; capture = null; socket = null;
+  localPhase = wasLive && !cancel ? 'finishing' : 'idle';
+  if (localPhase === 'idle') localMode = 'idle';
+  if (oldSocket?.readyState === WebSocket.OPEN) oldSocket.send(JSON.stringify({ type: 'stop' }));
+  oldSocket?.close();
+  await old?.stop();
+  $('meter').value = 0; $('level-label').textContent = '−∞ dB'; $('input-tag').textContent = 'DISCONNECTED';
+  renderStatus(localPhase === 'idle' ? { phase: 'idle' } : {});
+  if (wasSoundcheck) notice('Soundcheck stopped. Choose audio & go live to start translation.');
 }
 const showLevel = value => { $('meter').value = value; $('level-label').textContent = `${Math.round(20 * Math.log10(Math.max(value, 0.00001)))} dB`; };
 $('soundcheck').addEventListener('click', async () => {
-  $('soundcheck').disabled = true;
+  const id = ++attempt; localPhase = 'selecting'; localMode = 'soundcheck'; renderStatus();
   try {
-    capture = await chooseAudio($('source').value, $('device').value);
-    soundchecking = true;
-    await capture.connect(() => {}, showLevel, stopCapture);
-    renderStatus({ phase: 'idle', mode: 'idle' }); $('status').textContent = 'SOUNDCHECK'; $('input-tag').textContent = 'LOCAL AUDIO';
-    notice(`Local soundcheck: ${capture.label}. Watch the input meter while speech plays. Audio stays on this device.`);
-  } catch (error) { await stopCapture(); $('soundcheck').disabled = false; notice(error.message, true); }
+    const selected = await chooseAudio($('source').value, $('device').value);
+    if (id !== attempt) { await selected.stop(); return; }
+    capture = selected; localPhase = 'soundcheck'; renderStatus();
+    await selected.connect(() => {}, value => { if (id === attempt) showLevel(value); }, () => { if (id === attempt) void stopCapture(); });
+    if (id !== attempt) return;
+    $('input-tag').textContent = 'LOCAL AUDIO';
+    notice(`Soundcheck only: ${selected.label}. No translation is running. Stop this check, then choose audio & go live.`);
+  } catch (error) { if (id === attempt) { await stopCapture({ cancel: true }); notice(error.message, true); } }
 });
 $('start').addEventListener('click', async () => {
-  $('start').disabled = true;
+  const id = ++attempt; localPhase = 'selecting'; localMode = 'live'; lastIssue = ''; renderStatus();
+  notice('Choose the audio source for live translation.');
   try {
-    capture = await chooseAudio($('source').value, $('device').value);
-    $('input-tag').textContent = 'INPUT SELECTED'; notice(`Selected: ${capture.label}. Connecting…`);
-    socket = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/capture`);
+    const selected = await chooseAudio($('source').value, $('device').value);
+    if (id !== attempt) { await selected.stop(); return; }
+    capture = selected; localPhase = 'connecting'; renderStatus();
+    $('input-tag').textContent = 'INPUT SELECTED';
+    const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/capture`); socket = ws;
     await new Promise((resolve, reject) => {
-      socket.onopen = () => socket.send(JSON.stringify({ type: 'start', topic: $('topic').value, context: $('context').value }));
-      socket.onmessage = ({ data }) => { if (JSON.parse(data).type === 'ready') resolve(); };
-      socket.onerror = () => reject(Error('Capture connection failed. Check live provider configuration.'));
-      socket.onclose = () => reject(Error('Capture connection closed before becoming ready.'));
+      const timer = setTimeout(() => reject(Error('Live connection timed out. Stop and try again.')), 12000);
+      const done = (error) => { clearTimeout(timer); error ? reject(error) : resolve(); };
+      ws.onopen = () => ws.send(JSON.stringify({ type: 'start', topic: $('topic').value, context: $('context').value }));
+      ws.onmessage = ({ data }) => { if (JSON.parse(data).type === 'ready') done(); };
+      ws.onerror = () => done(Error('Capture connection failed. Check the connection and try again.'));
+      ws.onclose = () => done(Error('Capture connection closed before becoming ready.'));
     });
-    socket.onclose = () => { const old = capture; capture = null; old?.stop(); $('input-tag').textContent = 'DISCONNECTED'; };
-    await capture.connect(buffer => {
-      if (socket.readyState !== WebSocket.OPEN || socket.bufferedAmount > 128000) { stopCapture(); notice('Audio upload fell behind. Capture stopped; check the network.', true); return; }
-      socket.send(buffer);
-    }, showLevel, stopCapture);
-    $('input-tag').textContent = 'AUDIO CONNECTED';
-  } catch (error) { await stopCapture(); notice(error.message, true); $('start').disabled = !config.liveReady; }
+    if (id !== attempt) return;
+    $('captions').replaceChildren(); $('partial').textContent = ''; $('processing').textContent = 'WAITING FOR TRANSCRIPT';
+    ws.onclose = () => {
+      if (socket !== ws) return;
+      const old = capture; capture = null; socket = null; ++attempt; localPhase = 'idle'; localMode = 'idle';
+      void old?.stop(); $('meter').value = 0; $('level-label').textContent = '−∞ dB'; $('input-tag').textContent = 'DISCONNECTED';
+      renderStatus({ phase: 'error' }); notice(lastIssue || 'Live audio connection closed. Choose audio & go live to try again.', true);
+    };
+    await selected.connect(buffer => {
+      if (id !== attempt) return;
+      if (ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 128000) { void stopCapture({ cancel: true }); notice('Audio upload fell behind. Capture stopped; check the network.', true); return; }
+      ws.send(buffer);
+    }, value => { if (id === attempt) showLevel(value); }, () => { if (id === attempt) void stopCapture(); });
+    if (id !== attempt) return;
+    localPhase = 'live'; renderStatus(); $('input-tag').textContent = 'AUDIO CONNECTED';
+  } catch (error) { if (id === attempt) { await stopCapture({ cancel: true }); notice(error.message, true); } }
 });
 $('stop').addEventListener('click', async () => {
-  try { if (capture || socket?.readyState === WebSocket.OPEN) await stopCapture(); else await api('/api/stop', {}); }
-  catch (error) { notice(error.message, true); }
+  try {
+    if (localPhase !== 'idle' && localPhase !== 'finishing') await stopCapture();
+    else { await api('/api/stop', {}); localPhase = 'idle'; localMode = 'idle'; renderStatus({ phase: 'idle' }); notice('Session stopped.'); }
+  } catch (error) { notice(error.message, true); }
 });
 $('copy').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(config.viewerUrl); notice('Attendee link copied.'); }
@@ -134,4 +191,5 @@ $('export').addEventListener('click', () => {
   const link = document.createElement('a'); link.href = url; link.download = 'bitcoin-terminology.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 api('/api/health').then(health => { if (health.operatorAuthenticated) return openDesk(); }).catch(() => {});
-window.addEventListener('pagehide', () => { capture?.stop(); socket?.close(); events?.close(); });
+const recoveryTimer = setInterval(recoverCaptions, 2500);
+window.addEventListener('pagehide', () => { clearInterval(recoveryTimer); ++attempt; capture?.stop(); socket?.close(); events?.close(); });

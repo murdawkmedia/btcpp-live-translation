@@ -47,3 +47,13 @@ text may be published; incomplete responses and reasoning never reach listeners.
 Technical hints are short, topic/context-specific spelling references. Do not
 blindly replace ordinary words such as cash/cashew with project names. Human
 Korean review and real talk/venue tests remain required before event acceptance.
+
+## Browser capture controls
+
+Local selection, soundcheck, connection and live capture keep Stop enabled
+independently of SSE status. Cancellation invalidates late chooser/connection
+results, and a connecting WebSocket has a 12-second timeout. Soundcheck is visibly
+local-only. A 2.5-second operator recovery timer fetches an authenticated snapshot
+when no event has arrived for five seconds during live/finishing; requests are
+bounded to one in flight with a 10-second timeout. Caption IDs suppress duplicate
+SSE/snapshot rows. This changes the operator desk only; attendee SSE remains shared.
