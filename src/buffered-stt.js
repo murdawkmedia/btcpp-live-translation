@@ -24,7 +24,7 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
   const prompt = cloud ? prefix + hints.join(', ') + '.' : hints.join(', ');
   const close = () => { if (!closed) { closed = true; onClosed?.(); } };
   const fail = message => { controller.abort(); ended = true; chunks = []; queue.length = 0; onError(message); close(); };
-  const quotaError = error => cloud && /daily free allocation/i.test(String(error?.message || ''));
+  const quotaError = error => cloud && (Number(error?.code) === 3036 || /daily free allocation|\b3036\b/i.test(String(error?.message || '')));
   const failureMessage = error => {
     if (quotaError(error)) return 'Cloudflare’s daily free AI allowance is exhausted. Wait for the 00:00 UTC reset or enable Workers Paid.';
     if (error.code === 'missing_word_timing') return 'Recognition returned text without word timings after retry. Capture stopped to avoid repeating speech.';

@@ -152,3 +152,11 @@ test('a native Cloudflare daily allocation error stops without retry and explain
   for (let i = 0; i < 5; i++) bridge.send(speech()); bridge.finish(); await failure;
   assert.equal(calls, 1, 'An exhausted daily allowance cannot recover through an immediate retry');
 });
+
+test('the documented native AI account-limit code is recognized without a message body', async () => {
+  let calls = 0;
+  const { bridge, closed } = capture(async () => { calls++; throw Object.assign(Error('3036: Account limited'), { code: 3036 }); });
+  const failure = assert.rejects(closed, /daily free AI allowance.*exhausted/);
+  for (let i = 0; i < 5; i++) bridge.send(speech()); bridge.finish(); await failure;
+  assert.equal(calls, 1);
+});
