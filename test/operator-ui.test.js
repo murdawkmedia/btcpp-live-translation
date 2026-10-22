@@ -7,8 +7,8 @@ import vm from 'node:vm';
 const code = (await readFile(new URL('../public/app.js', import.meta.url), 'utf8'))
   .replace("import { chooseAudio } from './capture.js';", '');
 const tick = () => new Promise(resolve => setImmediate(resolve));
-async function desk({ chooser, ready = true } = {}) {
-  const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000;
+async function desk({ chooser, ready = true, connectionErrorAfter = Infinity } = {}) {
+  const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000, pendingSnapshot;
   class Element {
     constructor() { this.disabled = false; this.value = ''; this.children = []; this.handlers = {}; this.dataset = {}; this.classList = { toggle() {} }; }
     addEventListener(type, handler) { this.handlers[type] = handler; }
@@ -26,10 +26,12 @@ async function desk({ chooser, ready = true } = {}) {
     constructor() { sockets.push(this); this.readyState = 0; this.bufferedAmount = 0; this.sent = []; queueMicrotask(() => { if (this.readyState !== 0) return; this.readyState = 1; this.onopen?.(); }); }
     send(data) {
       this.sent.push(data);
-      if (typeof data === 'string' && JSON.parse(data).type === 'start' && ready)
-        queueMicrotask(() => this.onmessage?.({ data: JSON.stringify({ type: 'ready', sessionId: 'session-a' }) }));
+      if (typeof data === 'string' && JSON.parse(data).type === 'start') {
+        if (sockets.length > connectionErrorAfter) queueMicrotask(() => this.onerror?.());
+        else if (ready) queueMicrotask(() => this.onmessage?.({ data: JSON.stringify({ type: 'ready', sessionId: sockets.length === 1 ? 'session-a' : 'session-' + sockets.length }) }));
+      }
     }
-    close() { if (this.readyState === 3) return; this.readyState = 3; this.onclose?.(); }
+    close(code = 1000) { if (this.readyState === 3) return; this.readyState = 3; this.onclose?.({ code }); }
   }
   const makeCapture = () => {
     const capture = { label: 'Fixture speech input', stopped: 0,
@@ -43,12 +45,13 @@ async function desk({ chooser, ready = true } = {}) {
     window: { addEventListener() {} }, location: { protocol: 'https:', host: 'fixture.invalid' },
     WebSocket: Socket, EventSource: class { constructor() { streams.push(this); } close() {} },
     chooseAudio: chooser ? () => chooser(makeCapture) : async () => makeCapture(),
-    fetch: async path => ({ ok: true, json: async () => path === '/api/health' ? { operatorAuthenticated: true } : path === '/api/config' ? config : path === '/api/terms' ? { terms: [] } : { ok: true } }),
-    AbortSignal, setTimeout, clearTimeout, setInterval: callback => { intervals.push(callback); return intervals.length; }, clearInterval() {},
+    fetch: async path => { const held = path === '/api/config' ? pendingSnapshot : null; if (held) pendingSnapshot = null; return { ok: true, json: async () => { if (held) { await held.promise; return held.value; } return path === '/api/health' ? { operatorAuthenticated: true } : path === '/api/config' ? config : path === '/api/terms' ? { terms: [] } : { ok: true }; } }; },
+    AbortSignal, setTimeout: (fn, ms) => setTimeout(fn, ms <= 4000 ? 0 : ms), clearTimeout, setInterval: callback => { intervals.push(callback); return intervals.length; }, clearInterval() {},
     Date: class extends Date { static now() { return now; } }, navigator: {}, console };
   vm.runInNewContext(code, sandbox, { filename: 'app.js' });
   await tick();
   return { node, sockets, captures, config,
+    holdSnapshot: () => { let release; pendingSnapshot = { value: JSON.parse(JSON.stringify(config)), promise: new Promise(resolve => { release = resolve; }) }; return release; },
     advance: ms => { now += ms; }, poll: async () => { for (const callback of intervals) await callback(); },
     click: id => node(id).disabled ? undefined : node(id).handlers.click?.({}),
     emit: event => streams[0].onmessage({ data: JSON.stringify(event) }),
@@ -155,4 +158,61 @@ test('an abrupt socket close recovers the retained operator error without SSE', 
   ui.config.sessionId = 'session-a'; ui.config.lastIssue = { sessionId: 'session-a', message: 'Recognition returned text without word timings after retry.' };
   ui.config.phase = 'error'; ui.sockets[0].close(); await tick();
   assert.match(ui.node('notice').textContent, /word timings/);
+});
+
+const until = async predicate => { for (let i = 0; i < 100 && !predicate(); i++) await new Promise(resolve => setTimeout(resolve, 5)); assert.ok(predicate()); };
+
+test('a transient live socket reset reconnects using the selected input and sends new frames', async () => {
+  const ui = await desk(); await ui.click('start');
+  ui.sockets[0].close(1006);
+  assert.equal(ui.captures[0].stopped, 0, 'The selected audio input must survive a transport reset');
+  assert.equal(ui.node('stop').disabled, false);
+  await until(() => ui.sockets.length === 2 && ui.node('status').textContent === 'ON AIR');
+  assert.equal(ui.captures.length, 1);
+  const frame = new ArrayBuffer(3200); ui.captures[0].frame(frame);
+  assert.equal(ui.sockets[1].sent.at(-1), frame);
+  assert.match(ui.node('notice').textContent, /reconnected.*missing/i);
+  await ui.click('stop');
+});
+
+test('Stop cancels a scheduled reconnect and releases the selected input', async () => {
+  const ui = await desk(); await ui.click('start'); ui.sockets[0].close(1006);
+  await ui.click('stop'); await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(ui.sockets.length, 1); assert.equal(ui.captures[0].stopped, 1);
+  assert.equal(ui.node('start').disabled, false);
+});
+
+test('an explicit capture failure is not retried as a transport reset', async () => {
+  const ui = await desk(); await ui.click('start');
+  ui.sockets[0].onmessage({ data: JSON.stringify({ type: 'issue', stage: 'capture', message: 'Recognition access rejected.' }) });
+  ui.sockets[0].close(1006); await new Promise(resolve => setTimeout(resolve, 10));
+  assert.equal(ui.sockets.length, 1); assert.equal(ui.captures[0].stopped, 1);
+  assert.match(ui.node('notice').textContent, /access rejected/);
+});
+
+test('three failed reconnect attempts release capture and leave a useful error', async () => {
+  const ui = await desk({ connectionErrorAfter: 1 }); await ui.click('start');
+  ui.sockets[0].close(1006);
+  await until(() => ui.captures[0].stopped === 1);
+  assert.equal(ui.sockets.length, 4);
+  assert.equal(ui.node('start').disabled, false); assert.equal(ui.node('stop').disabled, true);
+  assert.match(ui.node('notice').textContent, /reconnect.*3|three.*reconnect/i);
+});
+
+test('a secondary voice warning cannot block recovery from a transport reset', async () => {
+  const ui = await desk(); await ui.click('start');
+  ui.emit({ type: 'issue', stage: 'speech', message: 'Voice is falling behind.' });
+  ui.sockets[0].close(1006);
+  await until(() => ui.sockets.length === 2 && ui.node('status').textContent === 'ON AIR');
+  assert.equal(ui.captures[0].stopped, 0); await ui.click('stop');
+});
+
+test('a snapshot from the lost connection cannot restore rows after reconnect', async () => {
+  const ui = await desk(); await ui.click('start');
+  ui.config.phase = 'live'; ui.config.history = [{ id: 1, english: 'Previous session.', korean: '이전.', processingMs: 10 }];
+  const release = ui.holdSnapshot(); ui.advance(6000); const polling = ui.poll(); await tick();
+  ui.sockets[0].close(1006); await until(() => ui.sockets.length === 2 && ui.node('status').textContent === 'ON AIR');
+  release(); await polling;
+  assert.equal(ui.node('captions').children.length, 0, 'Old responses must not repopulate a restarted caption session');
+  await ui.click('stop');
 });

@@ -139,3 +139,8 @@ npm run dev:cloud
 See [verification](docs/verification.md), [handoff](docs/handoff.md) and
 [upstream references](docs/upstream-reuse.md). The application is MIT licensed;
 provider services and optional models have separate terms and licenses.
+
+Unexpected live transport resets automatically reconnect with the selected audio
+input, with three attempts per interruption. Stop cancels recovery. Explicit
+provider failures remain visible and require a manual restart. Speech during
+reconnect may be missing; source audio is not recorded or replayed.

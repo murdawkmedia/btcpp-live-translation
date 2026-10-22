@@ -88,6 +88,25 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 30));
   }
   assert.equal((await fetch(origin + '/api/audio/1?token=viewer-fixture-only')).status, 409);
+  const interrupted = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
+  await once(interrupted, 'open'); const interruptedReady = once(interrupted, 'message');
+  interrupted.send(JSON.stringify({ type: 'start', topic: 'cryptography' }));
+  const interruptedSession = JSON.parse((await interruptedReady)[0].toString()).sessionId;
+  interrupted.send(Buffer.alloc(3200));
+  for (let i = 0; i < 100; i++) {
+    const value = await (await fetch(origin + '/api/config', { headers: { Cookie: cookie } })).json();
+    if (value.history?.[0]?.audioReady) break;
+    await new Promise(resolve => setTimeout(resolve, 30));
+  }
+  interrupted.terminate();
+  let disconnected;
+  for (let i = 0; i < 100; i++) {
+    disconnected = await (await fetch(origin + '/api/config', { headers: { Cookie: cookie } })).json();
+    if (disconnected.phase === 'idle') break;
+    await new Promise(resolve => setTimeout(resolve, 30));
+  }
+  assert.equal(disconnected.sessionId, interruptedSession, 'An abrupt browser disconnect must not crash/recreate the stage');
+  assert.equal(disconnected.phase, 'idle'); assert.equal(disconnected.history.length, 1);
   const failed = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
   t.after(() => failed.terminate()); await once(failed, 'open');
   const controls = []; failed.on('message', data => controls.push(JSON.parse(data.toString())));

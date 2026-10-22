@@ -106,3 +106,18 @@ The catch-up release uses a fresh instance after runtime probes showed the prior
 instance still answered the old protocol despite uploaded-byte/version readback.
 Never rotate this key during an active capture or use it as a substitute for a
 storage migration. Verify new runtime fields before accepting a deployment.
+
+## Live transport recovery
+
+An unexpected live socket close (1006, 1012 or 1013) retains the chosen audio
+input and retries the connection three times, after one, two and four seconds.
+Each handshake has a 12-second deadline. Stop cancels pending retries and releases
+the input; a late handshake cannot revive a stopped session. Explicit application
+failures and normal closes are not automatically restarted. Secondary voice or
+recognition warnings never become terminal capture failures.
+
+A server reset starts a new shared caption session. Old rows are cleared before
+new IDs can be reused. Speech captured during reconnect is discarded with a
+visible possible-gap notice; it is not recorded or replayed. This recovery does
+not establish the cause of a platform reset or promise gapless delivery. After
+three unsuccessful attempts the input is released and a manual retry is offered.
