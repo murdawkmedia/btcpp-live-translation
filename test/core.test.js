@@ -105,3 +105,13 @@ test('sentence commits keep an amount with its unit and complete comparison', ()
   assert.equal(a.accept(words, 0, 6.5), 'Alice sends 1,000 satoshis, not 1,000,000.');
   assert.equal(a.accept([...words, { word: ' Final', start: 6.1, end: 6.5 }], 0), 'Final');
 });
+
+test('protected currency units round-trip exactly and never replace ordinary words', () => {
+  const guard = glossary.protectCurrencyUnits('1000 satoshis, 2 BTC, 3 sats; satisfaction and wBTC.');
+  assert.equal(guard.text, '1000 BTCPP_UNIT_A, 2 BTCPP_UNIT_B, 3 BTCPP_UNIT_C; satisfaction and wBTC.');
+  assert.equal(guard.restore('3 BTCPP_UNIT_C, 2 BTCPP_UNIT_B, 1000 BTCPP_UNIT_A'), '3 sats, 2 BTC, 1000 satoshis');
+  assert.throws(() => guard.restore('1000 renamed-unit'), /Protected unit/);
+  assert.throws(() => guard.restore(guard.text + ' BTCPP_UNIT_A'), /Protected unit/);
+  const collision = glossary.protectCurrencyUnits('BTCPP_UNIT_A and 1 BTC');
+  assert.equal(collision.restore(collision.text), 'BTCPP_UNIT_A and 1 BTC');
+});

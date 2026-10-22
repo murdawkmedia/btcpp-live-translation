@@ -38,10 +38,11 @@ late results.
 
 The cloud recognizer retains bounded audio context across three-second refreshes
 after its first five-second window. Word timestamps select new stable words.
-The translation default is Cloudflare GPT-OSS 120B using Responses input/output
-and low reasoning effort. Only final message text may be published; incomplete
-responses and reasoning must never reach listeners. Qwen3 remains configurable
-and receives /no_think for shorter generation.
+The cloud translation default is Qwen3 with /no_think. Bitcoin unit tokens
+are protected and restored exactly; a missing/duplicated marker fails validation.
+One retry handles cloud provider or output failures. GPT-OSS remains an explicit
+option using Responses input/output and low reasoning effort. Only final message
+text may be published; incomplete responses and reasoning never reach listeners.
 
 Technical hints are short, topic/context-specific spelling references. Do not
 blindly replace ordinary words such as cash/cashew with project names. Human

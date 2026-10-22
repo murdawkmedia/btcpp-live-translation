@@ -7,7 +7,7 @@ export function configFromEnv(env = {}) {
     translationProvider: env.TRANSLATION_PROVIDER || (cloud ? (env.OPENROUTER_API_KEY ? 'openrouter' : 'workers-ai') : 'local'),
     ttsProvider: env.TTS_PROVIDER || (cloud ? (env.ELEVENLABS_API_KEY ? 'elevenlabs' : 'workers-ai') : 'local'),
     targetLanguage: env.TARGET_LANGUAGE || 'ko',
-    translationModel: env.TRANSLATION_MODEL || (cloud ? (env.OPENROUTER_API_KEY ? 'google/gemini-2.5-flash' : '@cf/openai/gpt-oss-120b') : 'qwen3:8b'),
+    translationModel: env.TRANSLATION_MODEL || (cloud ? (env.OPENROUTER_API_KEY ? 'google/gemini-2.5-flash' : '@cf/qwen/qwen3-30b-a3b-fp8') : 'qwen3:8b'),
     localSttUrl: env.LOCAL_STT_URL || 'http://127.0.0.1:8080/inference',
     translationBase: env.TRANSLATION_BASE_URL || (cloud ? undefined : 'http://127.0.0.1:11434/v1'),
     localTtsUrl: env.LOCAL_TTS_URL || 'http://127.0.0.1:8880/v1/audio/speech',

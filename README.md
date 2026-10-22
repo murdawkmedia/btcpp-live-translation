@@ -102,9 +102,11 @@ provider count/length limits. Translation sees relevant terms and two prior
 captions for context. Unreviewed glossary drafts never become mandatory rules.
 
 Translation and synthesis happen once per stage/target, shared by listeners.
-The hosted default uses Whisper large v3 turbo, GPT-OSS 120B with low reasoning
-effort for translation, and MeloTTS for optional listening. Explicit model choices
-remain supported. Bitcoin unit spellings are preserved in the translation prompt.
+The hosted default uses Whisper large v3 turbo, Qwen3 with /no_think for
+translation, and MeloTTS for optional listening. Explicit model choices remain
+supported. Cloud translation protects Bitcoin units with temporary identifiers,
+restores their exact spellings and rejects missing or duplicated identifiers.
+A failed cloud translation is retried once; persistent failure is reported.
 
 Captions have their own ordered queue. Speech runs separately and cannot hold
 back the next caption; queued voice is bounded and older audio is skipped if it

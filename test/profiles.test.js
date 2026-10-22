@@ -111,16 +111,15 @@ test('unfinished model reasoning cannot become a translated caption or spoken au
   await assert.rejects(provider.translate('Bitcoin.', new AbortController().signal), /Invalid translation/);
 });
 
-test('default cloud translation uses low-effort Responses output and ignores reasoning', async () => {
-  const config = settings.configFromEnv({ PROFILE: 'cloud' });
-  assert.equal(config.translationModel, '@cf/openai/gpt-oss-120b');
+test('explicit GPT-OSS translation uses low-effort Responses output and ignores reasoning', async () => {
+  const config = settings.configFromEnv({ PROFILE: 'cloud', TRANSLATION_MODEL: '@cf/openai/gpt-oss-120b' });
   const provider = adapters.createLiveProvider({ ...config, runAI: async (model, input) => {
     assert.equal(model, '@cf/openai/gpt-oss-120b');
     assert.equal(input.reasoning.effort, 'low');
     assert.equal(input.input[1].role, 'user');
     return { status: 'completed', output: [
       { type: 'reasoning', content: [{ type: 'reasoning_text', text: 'private reasoning' }] },
-      { type: 'message', content: [{ type: 'output_text', text: '1000 satoshis를 보냅니다.' }] }
+      { type: 'message', content: [{ type: 'output_text', text: '1000 BTCPP_UNIT_A를 보냅니다.' }] }
     ] };
   } });
   assert.equal(await provider.translate('Send 1000 satoshis.'), '1000 satoshis를 보냅니다.');
@@ -131,4 +130,26 @@ test('incomplete cloud translation cannot become a caption', async () => {
     status: 'incomplete', output: [{ type: 'message', content: [{ type: 'output_text', text: 'unfinished' }] }]
   }) });
   await assert.rejects(provider.translate('Bitcoin.'), /Invalid translation/);
+});
+
+test('default cloud translation protects units and retries a transient provider failure once', async () => {
+  const config = settings.configFromEnv({ PROFILE: 'cloud' });
+  assert.equal(config.translationModel, '@cf/qwen/qwen3-30b-a3b-fp8');
+  let calls = 0;
+  const provider = adapters.createLiveProvider({ ...config, runAI: async (_, input) => {
+    if (++calls === 1) throw Error('Transient provider failure');
+    assert.match(input.messages[0].content, /Copy.*BTCPP_UNIT_A/);
+    const current = JSON.parse(input.messages[1].content).currentUtterance;
+    assert.equal(current, 'Alice sends 1000 BTCPP_UNIT_A.');
+    return { response: '앨리스는 1000 BTCPP_UNIT_A를 보냅니다.' };
+  } });
+  assert.equal(await provider.translate('Alice sends 1000 satoshis.'), '앨리스는 1000 satoshis를 보냅니다.');
+  assert.equal(calls, 2);
+});
+
+test('invalid protected output never reaches captions and retries are bounded', async () => {
+  let calls = 0;
+  const provider = adapters.createLiveProvider({ translationProvider: 'workers-ai', runAI: async () => { calls++; return { response: 'Renamed units.' }; } });
+  await assert.rejects(provider.translate('1000 sats.'), /Protected unit/);
+  assert.equal(calls, 2);
 });

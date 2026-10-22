@@ -34,3 +34,25 @@ Use the terminology below in context; do not force a project name into an ordina
 Glossary translation drafts are not reviewed; do not treat draft translations as mandatory.
 Terminology: ${JSON.stringify(relevant)}`;
 }
+
+// Unit spellings are identifiers during cloud translation, then restored exactly.
+// This protects text already recognized; it does not guess or correct speech.
+export function protectCurrencyUnits(text) {
+  let prefix = 'BTCPP_UNIT_';
+  while (text.includes(prefix)) prefix += 'X';
+  const units = [];
+  const masked = text.replace(/(?<![\p{L}\p{N}])(?:satoshis|satoshi|sats|sat|BTC)(?![\p{L}\p{N}])/giu, unit => {
+    const marker = prefix + (units.length + 10).toString(36).toUpperCase();
+    units.push({ marker, unit }); return marker;
+  });
+  return { text: masked, markers: units.map(item => item.marker), restore(output) {
+    let restored = output;
+    for (const { marker, unit } of units) {
+      const pattern = new RegExp(`${marker}(?![A-Z0-9])`, 'g');
+      if ([...restored.matchAll(pattern)].length !== 1) throw Error('Protected unit missing or changed');
+      restored = restored.replace(pattern, unit);
+    }
+    if (units.length && restored.includes(prefix)) throw Error('Protected unit missing or changed');
+    return restored;
+  } };
+}
