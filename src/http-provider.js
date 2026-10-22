@@ -23,7 +23,11 @@ export function createLiveProvider(config = {}) {
         previousContextOnly: previous.map(s => ({ english: s.english, translated: s.translated || s.korean })), currentUtterance: text }) }];
       let payload;
       if (provider === 'workers-ai') {
-        payload = await config.runAI(config.translationModel || '@cf/qwen/qwen3-30b-a3b-fp8', { messages, max_tokens: 1500, temperature: 0.1 });
+        const model = config.translationModel || '@cf/openai/gpt-oss-120b';
+        if (model.startsWith('@cf/qwen/qwen3-')) messages[0].content += '\n/no_think';
+        payload = await config.runAI(model, model.startsWith('@cf/openai/gpt-oss-')
+          ? { input: messages, reasoning: { effort: 'low' }, max_output_tokens: 1500 }
+          : { messages, max_tokens: 1500, temperature: 0.1 });
       } else {
         const url = config.translationBase || (provider === 'openrouter' ? 'https://openrouter.ai/api/v1' : base);
         const key = provider === 'openrouter' ? config.openrouterKey : provider === 'local' ? null : config.xaiKey;
@@ -33,7 +37,10 @@ export function createLiveProvider(config = {}) {
             max_tokens: 1500, temperature: 0.1, stream: false, ...(provider === 'local' ? { think: false } : {}) }) });
         payload = JSON.parse((await bytes(response, 128000)).toString());
       }
-      const raw = payload.response ?? payload.choices?.[0]?.message?.content;
+      if (payload.status === 'incomplete' || payload.error) throw Error('Invalid translation response');
+      const raw = payload.output?.filter(item => item.type === 'message')
+        .flatMap(item => item.content || []).filter(item => item.type === 'output_text').map(item => item.text).join('')
+        || payload.response || payload.choices?.[0]?.message?.content;
       const output = typeof raw === 'string' ? raw.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim() : '';
       if (!output || output.length > 8000 || /^<think\b/i.test(output)) throw Error('Invalid translation response');
       return output;

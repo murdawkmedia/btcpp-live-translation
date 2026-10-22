@@ -27,3 +27,22 @@ export class TranscriptAssembler {
     return text || null;
   }
 }
+
+// Buffered recognition revisits audio around window boundaries. Publish only
+// stable words and use their absolute audio positions to suppress overlap.
+export class TimedTranscriptAssembler {
+  end = -Infinity;
+  lastWord = '';
+  accept(words, offset = 0, stableUntil = Infinity) {
+    const output = [];
+    for (const word of words) {
+      const start = Number(word.start) + offset, end = Number(word.end) + offset;
+      const text = String(word.word || '').trim(), key = text.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+      if (!text || !Number.isFinite(start) || !Number.isFinite(end) || end < start || start < 0 || end > stableUntil + 0.001) continue;
+      if (end <= this.end + 0.001 || start < this.end - 0.12) continue;
+      if (start < this.end - 0.01 && key === this.lastWord) continue;
+      output.push(text); this.end = end; this.lastWord = key;
+    }
+    return output.join(' ').replace(/\s+([,.;:!?])/g, '$1');
+  }
+}

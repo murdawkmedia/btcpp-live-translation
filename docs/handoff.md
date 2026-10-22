@@ -27,3 +27,22 @@ journals are persisted. Provider policies may differ. Stop before deployments;
 reconnect buffering is bounded and does not guarantee gapless source recovery.
 Nostr source publication, GitHub mirroring and Cloudflare deployment are separate
 operations whose actual URLs/receipts must be verified independently.
+
+## Text-first delivery
+
+Live translated text is the primary output. Voice may lag. Keep translation and
+synthesis queues independent; never wait for speech before starting the next
+caption. The default speech backlog is three waiting segments, and speech older
+than 20 seconds is skipped. Normal Stop drains both queues; cancellation ignores
+late results.
+
+The cloud recognizer retains bounded audio context across three-second refreshes
+after its first five-second window. Word timestamps select new stable words.
+The translation default is Cloudflare GPT-OSS 120B using Responses input/output
+and low reasoning effort. Only final message text may be published; incomplete
+responses and reasoning must never reach listeners. Qwen3 remains configurable
+and receives /no_think for shorter generation.
+
+Technical hints are short, topic/context-specific spelling references. Do not
+blindly replace ordinary words such as cash/cashew with project names. Human
+Korean review and real talk/venue tests remain required before event acceptance.

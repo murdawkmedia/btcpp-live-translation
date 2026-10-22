@@ -3,6 +3,60 @@ import assert from 'node:assert/strict';
 const { Pipeline } = await import('../src/pipeline.js').catch(() => ({}));
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+test('a slow voice response cannot hold back the next translated caption', async () => {
+  let releaseVoice, voiceStarted;
+  const started = new Promise(resolve => { voiceStarted = resolve; });
+  const gate = new Promise(resolve => { releaseVoice = resolve; });
+  const p = new Pipeline({ translate: async text => `ko:${text}`, speak: async text => {
+    if (text === 'ko:first') { voiceStarted(); await gate; }
+    return { data: Buffer.alloc(10), mime: 'audio/wav' };
+  } });
+  const events = []; p.on('event', event => events.push(event));
+  const first = p.submit('first'); await started;
+  const second = p.submit('second');
+  try {
+    await new Promise(setImmediate);
+    assert.deepEqual(events.filter(event => event.type === 'caption').map(event => event.segment.english), ['first', 'second']);
+    assert.equal(events.some(event => event.type === 'audio'), false);
+  } finally { releaseVoice(); await Promise.all([first, second]); }
+});
+
+test('a stalled voice queue stays bounded while all captions continue', async () => {
+  let release, ready;
+  const started = new Promise(resolve => { ready = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  const p = new Pipeline({ translate: async text => text, speak: async text => {
+    if (text === '1') { ready(); await gate; }
+    return { data: Buffer.alloc(10), mime: 'audio/wav' };
+  } }, { maxSpeechQueue: 2 });
+  const events = []; p.on('event', event => events.push(event));
+  const submitted = [p.submit('1')]; await started;
+  try {
+    for (let i = 2; i <= 8; i++) { submitted.push(p.submit(String(i))); await new Promise(setImmediate); }
+    assert.deepEqual(p.history.map(segment => segment.english), ['1', '2', '3', '4', '5', '6', '7', '8']);
+    assert.equal(p.speechQueue.length, 2);
+  } finally { release(); await Promise.all(submitted); await p.drain(); }
+  assert.deepEqual(events.filter(event => event.type === 'audio').map(event => event.id), [1, 7, 8]);
+  assert.ok(events.some(event => event.type === 'issue' && event.stage === 'speech'));
+});
+
+test('stop cancels queued voice and ignores a late in-flight speech response', async () => {
+  let release, ready;
+  const started = new Promise(resolve => { ready = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  const p = new Pipeline({ translate: async text => text, speak: async () => { ready(); await gate; return { data: Buffer.alloc(10), mime: 'audio/wav' }; } });
+  const events = []; p.on('event', event => events.push(event));
+  const first = p.submit('first'); await started; const second = p.submit('second');
+  await new Promise(setImmediate); p.cancel(); release();
+  assert.deepEqual(await Promise.all([first, second]), [false, false]); await p.drain();
+  assert.equal(events.filter(event => event.type === 'audio').length, 0);
+  assert.equal(p.audio.size, 0);
+});
+
+test('invalid voice queue capacity is rejected', () => {
+  assert.throws(() => new Pipeline({}, { maxSpeechQueue: 0 }), /voice queue/i);
+});
+
 test('a non-Korean broadcast labels shared captions with its selected language', async () => {
   const p = new Pipeline({ targetLanguage: 'fr', translate: async () => 'Bonjour Bitcoin.',
     speak: async () => ({ data: Buffer.alloc(10), mime: 'audio/mpeg' }) });

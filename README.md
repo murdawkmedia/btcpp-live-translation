@@ -88,8 +88,12 @@ speech-only vMix bus avoids music, notifications and translated-playback feedbac
 Streaming ElevenLabs/xAI recognition uses bounded reconnect attempts and up to
 three seconds of newly received audio buffering during a disconnect. Audio that
 was already in flight may be lost; the app does not claim gapless recovery.
-Local/Workers AI recognition uses pause-aware short chunks, with a five-second
-maximum before processing. A long uninterrupted phrase may span chunks.
+Local recognition uses pause-aware chunks of up to five seconds. Workers AI
+recognition starts a window at five seconds, then refreshes every three seconds
+with up to ten seconds of preceding audio context. Word timing suppresses
+overlap; the final 0.6 seconds wait for more context. A 0.7-second pause or Stop
+flushes the tail. This trades additional recognition work for better continuity
+around technical terms; it is not word-by-word simultaneous interpretation.
 
 The 345-entry terminology reference covers 10 Bitcoin, Lightning, ecash, Nostr
 and cryptography topics. Hints favor the chosen topic and talk context, within
@@ -97,8 +101,14 @@ provider count/length limits. Translation sees relevant terms and two prior
 captions for context. Unreviewed glossary drafts never become mandatory rules.
 
 Translation and synthesis happen once per stage/target, shared by listeners.
-Queues, caption history and audio memory are bounded. Text remains available if
-speech fails. Phones explicitly enable playback, skip stale audio and reconnect
+The hosted default uses Whisper large v3 turbo, GPT-OSS 120B with low reasoning
+effort for translation, and MeloTTS for optional listening. Explicit model choices
+remain supported. Bitcoin unit spellings are preserved in the translation prompt.
+
+Captions have their own ordered queue. Speech runs separately and cannot hold
+back the next caption; queued voice is bounded and older audio is skipped if it
+falls behind. Queues, caption history and audio memory are bounded. Text remains
+available if speech fails. Phones explicitly enable playback, skip stale audio and reconnect
 for current captions. Raw source audio and transcripts are not persisted by the
 app. Hosted sessions stop after six hours and can be restarted.
 

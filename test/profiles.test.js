@@ -7,6 +7,15 @@ const settings = await import('../src/config.js').catch(() => ({}));
 const adapters = await import('../src/providers.js');
 const { wav } = await import('../src/buffered-stt.js');
 
+test('hybrid Qwen translation requests fast non-reasoning output', async () => {
+  const provider = adapters.createLiveProvider({ translationProvider: 'workers-ai', targetLanguage: 'ko', translationModel: '@cf/qwen/qwen3-30b-a3b-fp8',
+    runAI: async (_, input) => {
+      assert.match(input.messages[0].content, /\/no_think/);
+      return { response: '번역' };
+    } });
+  assert.equal(await provider.translate('Bitcoin.'), '번역');
+});
+
 test('Workers AI speech accepts Korean and Japanese through the model language codes', async () => {
   for (const [targetLanguage, expected] of [['ko', 'kr'], ['ja', 'jp'], ['fr', 'fr']]) {
     const provider = adapters.createLiveProvider({ ttsProvider: 'workers-ai', targetLanguage,
@@ -100,4 +109,26 @@ test('unfinished model reasoning cannot become a translated caption or spoken au
   const provider = adapters.createLiveProvider({ translationProvider: 'local', targetLanguage: 'ko',
     translationBase: `http://127.0.0.1:${server.address().port}`, translationModel: 'fixture-reasoning-model' });
   await assert.rejects(provider.translate('Bitcoin.', new AbortController().signal), /Invalid translation/);
+});
+
+test('default cloud translation uses low-effort Responses output and ignores reasoning', async () => {
+  const config = settings.configFromEnv({ PROFILE: 'cloud' });
+  assert.equal(config.translationModel, '@cf/openai/gpt-oss-120b');
+  const provider = adapters.createLiveProvider({ ...config, runAI: async (model, input) => {
+    assert.equal(model, '@cf/openai/gpt-oss-120b');
+    assert.equal(input.reasoning.effort, 'low');
+    assert.equal(input.input[1].role, 'user');
+    return { status: 'completed', output: [
+      { type: 'reasoning', content: [{ type: 'reasoning_text', text: 'private reasoning' }] },
+      { type: 'message', content: [{ type: 'output_text', text: '1000 satoshis를 보냅니다.' }] }
+    ] };
+  } });
+  assert.equal(await provider.translate('Send 1000 satoshis.'), '1000 satoshis를 보냅니다.');
+});
+
+test('incomplete cloud translation cannot become a caption', async () => {
+  const provider = adapters.createLiveProvider({ translationProvider: 'workers-ai', runAI: async () => ({
+    status: 'incomplete', output: [{ type: 'message', content: [{ type: 'output_text', text: 'unfinished' }] }]
+  }) });
+  await assert.rejects(provider.translate('Bitcoin.'), /Invalid translation/);
 });

@@ -31,6 +31,21 @@ test('translation context matches whole terms without turning ordinary cash into
   assert.match(glossary.translationInstructions('We use Payjoin and 21 BTC.'), /21|numbers/);
 });
 
+test('Bitcoin currency units are protected from being renamed in translation', () => {
+  const instructions = glossary.translationInstructions('Alice sends 1000 satoshis, not 1000000 sats.');
+  const terminology = JSON.parse(instructions.split('Terminology: ')[1]);
+  assert.ok(terminology.some(term => term.term === 'satoshis' && term.preserveSpelling));
+  assert.match(instructions, /Keep Bitcoin currency units .*satoshis.*unchanged/);
+});
+
+test('timed overlapping windows defer unstable words without repeating the shared prefix', () => {
+  assert.equal(typeof transcript.TimedTranscriptAssembler, 'function');
+  const a = new transcript.TimedTranscriptAssembler();
+  assert.equal(a.accept([{ word: 'Do', start: 0, end: 0.4 }, { word: 'not', start: 0.4, end: 0.8 }, { word: 'share', start: 0.8, end: 1.3 }], 0, 1), 'Do not');
+  assert.equal(a.accept([{ word: 'not', start: 0.3, end: 0.7 }, { word: 'share', start: 0.7, end: 1.2 }, { word: 'seeds.', start: 1.2, end: 1.8 }], 0.1), 'share seeds.');
+  assert.equal(a.accept([{ word: 'very', start: 2, end: 2.3 }, { word: 'very', start: 2.3, end: 2.6 }], 0), 'very very');
+});
+
 test('chunk-final then stitched utterance translates only the remaining words', () => {
   const a = new transcript.TranscriptAssembler();
   assert.equal(a.accept({ type: 'transcript.partial', is_final: false, text: 'Pay' }), null);
@@ -66,4 +81,14 @@ test('a fully duplicated utterance final clears context before the next utteranc
   assert.equal(a.accept({ type: 'transcript.partial', is_final: true, speech_final: true, text: 'Bitcoin', start: 0, duration: 1 }), null);
   assert.equal(a.accept({ type: 'transcript.partial', is_final: true, text: 'Payjoin', start: 2, duration: 1 }), 'Payjoin');
   assert.equal(a.accept({ type: 'transcript.partial', is_final: true, speech_final: true, text: 'Payjoin works.', start: 2, duration: 2 }), 'works.');
+});
+
+// Whisper emits punctuation/number pieces without spaces inside one number.
+test('timed words retain tokenizer spacing in amounts and punctuation', () => {
+  const a = new transcript.TimedTranscriptAssembler();
+  assert.equal(a.accept([
+    { word: ' Alice', start: 0, end: 0.2 }, { word: ' sends', start: 0.2, end: 0.4 },
+    { word: ' 1', start: 0.4, end: 0.5 }, { word: ',000', start: 0.5, end: 0.6 },
+    { word: ' sats.', start: 0.6, end: 0.8 }
+  ]), 'Alice sends 1,000 sats.');
 });
