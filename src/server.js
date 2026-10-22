@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { WebSocketServer, WebSocket } from 'ws';
 import QRCode from 'qrcode';
@@ -21,7 +21,7 @@ export function createApp(config = {}) {
   const providers = providerStatus(config), liveReady = providers.ready;
   let targetLanguage = config.targetLanguage || 'ko';
   const subscribers = new Set();
-  let pipeline, active = null, mode = 'idle', phase = 'idle', closed = false;
+  let pipeline, sessionId, active = null, mode = 'idle', phase = 'idle', closed = false;
   const operator = req => same((req.headers.cookie || '').split(';').map(v => v.trim()).find(v => v.startsWith('btcpp_operator='))?.slice(15), operatorToken);
   const viewer = (req, url) => operator(req) || same(url.searchParams.get('token'), viewerToken);
   const originAllowed = req => {
@@ -31,9 +31,11 @@ export function createApp(config = {}) {
     } catch { return false; }
   };
   const json = (res, value, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
-  const state = () => ({ mode, phase, listeners: subscribers.size, history: pipeline?.history || [],
+  const state = () => ({ mode, phase, sessionId, listeners: subscribers.size, history: pipeline?.history || [],
     queue: pipeline?.queue.length || 0, name: config.eventName || 'Bitcoin++', stage: config.stageName || 'Main Stage',
     targetLanguage, direction: `English → ${language(targetLanguage).name}` });
+  const onAir = () => ['live', 'reconnecting', 'finishing'].includes(phase);
+  const listenerState = () => ({ ...state(), history: onAir() ? pipeline.listenerHistory() : [] });
   const broadcast = event => {
     const data = `data: ${JSON.stringify(event)}\n\n`;
     for (const response of subscribers) {
@@ -42,9 +44,9 @@ export function createApp(config = {}) {
   };
   const status = () => { const { history, ...value } = state(); broadcast({ type: 'status', ...value }); };
   const replacePipeline = provider => {
-    pipeline?.cancel(); const p = new Pipeline(provider); pipeline = p;
-    p.on('event', event => { if (pipeline === p) broadcast(event); });
-    broadcast({ type: 'reset' });
+    pipeline?.cancel(); const p = new Pipeline(provider); pipeline = p; sessionId = randomUUID();
+    p.on('event', event => { if (pipeline === p) broadcast({ ...event, sessionId }); });
+    broadcast({ type: 'reset', sessionId });
   };
   replacePipeline(createRehearsalProvider());
   const halt = (message = '') => {
@@ -118,18 +120,24 @@ export function createApp(config = {}) {
         if (!operator(req)) throw fail(401, 'Operator access required');
         return json(res, { terms, hints: selectHints(url.searchParams.get('topic') || 'protocol'), reviewedKoreanTerms: 0 });
       }
+      if (url.pathname === '/api/listener') {
+        if (!viewer(req, url)) throw fail(401, 'Attendee link required');
+        return json(res, { type: 'snapshot', ...listenerState() });
+      }
       if (url.pathname === '/api/events') {
         if (!viewer(req, url)) throw fail(401, 'Attendee link required');
         if (subscribers.size >= 500) throw fail(503, 'Listener capacity reached');
         res.writeHead(200, { 'Content-Type': 'text/event-stream', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
         subscribers.add(res);
         res.on('error', () => subscribers.delete(res));
-        res.write(`data: ${JSON.stringify({ type: 'snapshot', ...state(), history: pipeline.history.slice(-10) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'snapshot', ...(operator(req) ? { ...state(), history: pipeline.history.slice(-10) } : listenerState()) })}\n\n`);
         const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 15000);
         req.on('close', () => { clearInterval(heartbeat); subscribers.delete(res); }); return;
       }
       if (url.pathname.startsWith('/api/audio/')) {
         if (!viewer(req, url)) throw fail(401, 'Attendee link required');
+        if (!onAir()) throw fail(409, 'Session is not live');
+        if (url.searchParams.has('session') && url.searchParams.get('session') !== sessionId) throw fail(404, 'Audio session expired');
         const audio = pipeline.audio.get(Number(url.pathname.split('/').at(-1)));
         if (!audio) throw fail(404, 'Audio segment expired or unavailable');
         res.writeHead(200, { 'Content-Type': audio.mime, 'Content-Length': audio.data.length }); res.end(audio.data); return;

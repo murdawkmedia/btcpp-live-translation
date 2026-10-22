@@ -6,6 +6,14 @@ Bitcoin terminology guides recognition and translation. The first event setting
 is English to Korean, with selectable Japanese, Spanish, French and Chinese.
 One target language is broadcast per session; stop before changing it.
 
+The attendee link opens without an operator login. Phones wait until the stage
+goes live and join automatically; captions and audio clear when the session ends.
+Captions can show the translation, the live English original, or both. English
+appears when transcription produces it, before translation completes. Everyone
+receives one shared stream. The separate menu language selector supports English,
+Korean, Japanese, Spanish, French and Chinese; it never changes the stage target.
+Both pages use a dark theme by default. Voice still needs a tap on Listen.
+
 Source: [Nostr primary](https://gitworkshop.dev/npub17j3f7cuhcvjqnf7d80x6rt9hmkkhdguwg4l2th0h4qnhqketr63s6xakwv/relay.ngit.dev/btcpp-live-translation)
 · [GitHub mirror](https://github.com/murdawkmedia/btcpp-live-translation).
 See [source maintenance](docs/source-hosting.md) for publication order.

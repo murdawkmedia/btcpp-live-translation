@@ -95,3 +95,14 @@ test('queue overflow is explicit and audio/history memory stays bounded', async 
   assert.ok(p.audioBytes <= 60);
   assert.equal(p.audio.size, 1);
 });
+test('English is broadcast and recoverable while translation is still pending', async () => {
+  let finish;
+  const pipeline = new Pipeline({ translate: () => new Promise(resolve => { finish = resolve; }), speak: async () => ({ data: Buffer.from('audio'), mime: 'audio/wav' }) });
+  const events = []; pipeline.on('event', event => events.push(event));
+  const done = pipeline.submit('Bitcoin is open source.');
+  assert.equal(events[0]?.type, 'transcript');
+  assert.equal(events[0]?.segment.english, 'Bitcoin is open source.');
+  assert.equal(pipeline.transcripts?.[0]?.english, 'Bitcoin is open source.');
+  finish('비트코인은 오픈 소스입니다.'); await done;
+  assert.equal(events.find(event => event.type === 'caption').segment.id, events[0].segment.id);
+});

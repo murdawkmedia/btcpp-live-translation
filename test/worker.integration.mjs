@@ -54,6 +54,11 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 150));
   }
   assert.ok(ready, logs);
+  assert.equal((await fetch(origin + '/api/listener')).status, 401);
+  assert.equal((await fetch(origin + '/api/listener?token=incorrect')).status, 401);
+  assert.equal((await fetch(origin + '/api/config?token=viewer-fixture-only')).status, 401);
+  const waiting = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
+  assert.deepEqual(waiting.history, []); assert.equal(waiting.viewerUrl, undefined);
   const login = await fetch(origin + '/api/login', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: 'operator-fixture-only' }) });
   assert.equal(login.status, 200); const cookie = login.headers.get('set-cookie').split(';')[0];
   const ws = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
@@ -67,10 +72,20 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 30));
   }
   assert.equal(status.history[0]?.translated, 'FROST는 비트코인 키를 보호합니다.');
+  const listener = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
+  assert.equal(listener.history[0].translated, status.history[0].translated);
+  assert.notEqual(listener.sessionId, waiting.sessionId); assert.equal(listener.providers, undefined);
+  assert.equal((await fetch(origin + '/api/audio/1?token=viewer-fixture-only&session=expired')).status, 404);
   const [a, b] = await Promise.all([fetch(origin + '/api/audio/1?token=viewer-fixture-only'), fetch(origin + '/api/audio/1?token=viewer-fixture-only')]);
   assert.equal(Buffer.from(await a.arrayBuffer()).subarray(0, 4).toString(), 'RIFF');
   assert.equal(Buffer.from(await b.arrayBuffer()).subarray(0, 4).toString(), 'RIFF');
   assert.equal(secretHeader, 'eleven-fixture-only'); assert.equal(hints.length, 50);
   assert.equal(pcm, 3200); assert.equal(translations, 1); assert.equal(speech, 1);
   ws.send(JSON.stringify({ type: 'stop' }));
+  for (let i = 0; i < 100; i++) {
+    const value = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
+    if (value.phase === 'idle') { assert.deepEqual(value.history, []); break; }
+    await new Promise(resolve => setTimeout(resolve, 30));
+  }
+  assert.equal((await fetch(origin + '/api/audio/1?token=viewer-fixture-only')).status, 409);
 });

@@ -56,4 +56,23 @@ results, and a connecting WebSocket has a 12-second timeout. Soundcheck is visib
 local-only. A 2.5-second operator recovery timer fetches an authenticated snapshot
 when no event has arrived for five seconds during live/finishing; requests are
 bounded to one in flight with a 10-second timeout. Caption IDs suppress duplicate
-SSE/snapshot rows. This changes the operator desk only; attendee SSE remains shared.
+SSE/snapshot rows.
+
+## Attendee delivery
+
+The read-only `/api/listener` snapshot uses the attendee capability, with no
+operator login, provider configuration or credential payload. It returns at most
+ten caption/transcript rows while on air, and no history while idle/connecting/error.
+The attendee page fetches on open and every 2.5 seconds when its event stream has
+been silent for five seconds. One request may be in flight, with a ten-second
+timeout; newer events invalidate older responses. Session IDs prevent reused
+caption/audio IDs from mixing after a missed reset. Off-air audio requests fail.
+Reconnecting and finishing remain on air so the final captions can drain; the
+operator's explicitly started sample rehearsal remains visibly labeled SAMPLE.
+
+English transcripts are published before translation and merged into the same
+caption ID when translated text arrives. Transcript/history memory stays bounded.
+The attendee can display the translation, English or both without changing any
+server setting or adding provider calls. Interface language is independent, saved
+locally, and supports English plus the five target languages. One shared translated
+caption/audio stream still serves everyone. Both pages default to dark colors.

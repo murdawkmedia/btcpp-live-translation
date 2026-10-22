@@ -30,6 +30,29 @@ test('capabilities, origins, body limits and audio access are enforced', async t
   assert.equal(config.termCount, 345);
 });
 
+test('attendee snapshots are read-only, session-scoped and empty off air', async t => {
+  const { request, app } = await start(t, { rehearsalInterval: 10000 });
+  assert.equal((await request('/api/listener')).status, 401);
+  assert.equal((await request('/api/listener?token=incorrect')).status, 401);
+  assert.equal((await request('/api/config?token=viewer-test-capability')).status, 401);
+  const initial = await (await request('/api/listener?token=viewer-test-capability')).json();
+  assert.equal(initial.phase, 'idle'); assert.deepEqual(initial.history, []);
+  assert.equal(initial.viewerUrl, undefined); assert.equal(initial.providers, undefined);
+  await request('/api/rehearsal', { auth: true, body: {} });
+  for (let i = 0; i < 100 && !app.state().history[0]?.audioReady; i++) await new Promise(r => setTimeout(r, 10));
+  const live = await (await request('/api/listener?token=viewer-test-capability')).json();
+  assert.equal(live.history.length, 1); assert.equal(typeof live.sessionId, 'string');
+  assert.notEqual(live.sessionId, initial.sessionId);
+  await request('/api/stop', { auth: true, body: {} });
+  const stopped = await (await request('/api/listener?token=viewer-test-capability')).json();
+  assert.deepEqual(stopped.history, []);
+  assert.equal((await request('/api/audio/1?token=viewer-test-capability')).status, 409);
+  const events = await request('/api/events?token=viewer-test-capability'); const reader = events.body.getReader();
+  const snapshot = JSON.parse(new TextDecoder().decode((await reader.read()).value).split('\n')[0].slice(6)); await reader.cancel();
+  assert.deepEqual(snapshot.history, []);
+  assert.equal((await (await request('/api/config', { auth: true })).json()).history.length, 1, 'Operator review remains available');
+});
+
 test('rehearsal delivers Korean captions and bounded playable audio through real SSE', async t => {
   const { request } = await start(t, { rehearsalInterval: 5 });
   const controller = new AbortController(); t.after(() => controller.abort());
@@ -101,7 +124,7 @@ test('listener credentials cannot upload audio over WebSocket', async t => {
   assert.equal(status, 401);
 });
 
-test('local mode streams only to configured loopback services and shares one generated translation', async t => {
+test('local mode uses only configured loopback services and retires audio after stop', async t => {
   let recognition = 0, translation = 0, speech = 0, multipart = '';
   const fixture = createServer(async (req, res) => {
     let body = Buffer.alloc(0); for await (const chunk of req) body = Buffer.concat([body, chunk]);
@@ -127,6 +150,6 @@ test('local mode streams only to configured loopback services and shares one gen
   assert.equal(app.state().history[0]?.translated, 'FROST protège les clés Bitcoin.');
   assert.match(multipart, /RIFF/); assert.match(multipart, /FROST/);
   const [a, b] = await Promise.all([request('/api/audio/1?token=viewer-test-capability'), request('/api/audio/1?token=viewer-test-capability')]);
-  assert.equal(await a.text(), 'fixture-local-audio'); assert.equal(await b.text(), 'fixture-local-audio');
+  assert.equal(a.status, 409); assert.equal(b.status, 409);
   assert.deepEqual([recognition, translation, speech], [1, 1, 1]);
 });

@@ -1,5 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import { timingSafeEqual } from 'node:crypto';
+import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import QRCode from 'qrcode';
 import { configFromEnv, providerStatus } from '../src/config.js';
@@ -47,10 +47,12 @@ export class StageSession extends DurableObject {
     this.mode = 'idle'; this.phase = 'idle'; this.replace(createRehearsalProvider());
   }
   state() {
-    return { mode: this.mode, phase: this.phase, listeners: this.subscribers.size, history: this.pipeline.history,
+    return { mode: this.mode, phase: this.phase, sessionId: this.sessionId, listeners: this.subscribers.size, history: this.pipeline.history,
       queue: this.pipeline.queue.length, name: this.config.eventName, stage: this.config.stageName,
       targetLanguage: this.target, direction: `English → ${language(this.target).name}` };
   }
+  onAir() { return ['live', 'reconnecting', 'finishing'].includes(this.phase); }
+  listenerState() { return { ...this.state(), history: this.onAir() ? this.pipeline.listenerHistory() : [] }; }
   broadcast(event) {
     const data = new TextEncoder().encode(`data: ${JSON.stringify(event)}\n\n`);
     for (const controller of this.subscribers) {
@@ -60,9 +62,9 @@ export class StageSession extends DurableObject {
   }
   status() { const { history, ...state } = this.state(); this.broadcast({ type: 'status', ...state }); }
   replace(provider) {
-    this.pipeline?.cancel(); const pipeline = new Pipeline(provider); this.pipeline = pipeline;
-    pipeline.on('event', event => { if (this.pipeline === pipeline) this.broadcast(event); });
-    this.broadcast({ type: 'reset' });
+    this.pipeline?.cancel(); const pipeline = new Pipeline(provider); this.pipeline = pipeline; this.sessionId = randomUUID();
+    pipeline.on('event', event => { if (this.pipeline === pipeline) this.broadcast({ ...event, sessionId: this.sessionId }); });
+    this.broadcast({ type: 'reset', sessionId: this.sessionId });
   }
   halt(message = '') {
     const source = this.active; this.active = null;
@@ -140,6 +142,10 @@ export class StageSession extends DurableObject {
         if (!operator) throw error(401, 'Operator access required');
         return json({ terms, hints: selectHints(url.searchParams.get('topic') || 'protocol'), reviewedKoreanTerms: 0 });
       }
+      if (url.pathname === '/api/listener') {
+        if (!attendee) throw error(401, 'Attendee link required');
+        return json({ type: 'snapshot', ...this.listenerState() });
+      }
       if (url.pathname === '/api/events') {
         if (!attendee) throw error(401, 'Attendee link required');
         if (this.subscribers.size >= 500) throw error(503, 'Listener capacity reached');
@@ -148,7 +154,7 @@ export class StageSession extends DurableObject {
         const stream = new ReadableStream({
           start: value => {
             controller = value; this.subscribers.add(controller);
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: 'snapshot', ...this.state(), history: this.pipeline.history.slice(-10) })}\n\n`));
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: 'snapshot', ...(operator ? { ...this.state(), history: this.pipeline.history.slice(-10) } : this.listenerState()) })}\n\n`));
             heartbeat = setInterval(() => { try { if (controller.desiredSize <= 0) { controller.close(); cleanup(); } else controller.enqueue(new TextEncoder().encode(': heartbeat\n\n')); } catch { cleanup(); } }, 15000);
           }, cancel: cleanup
         }, { highWaterMark: 256000, size: chunk => chunk.byteLength });
@@ -156,6 +162,8 @@ export class StageSession extends DurableObject {
       }
       if (url.pathname.startsWith('/api/audio/')) {
         if (!attendee) throw error(401, 'Attendee link required');
+        if (!this.onAir()) throw error(409, 'Session is not live');
+        if (url.searchParams.has('session') && url.searchParams.get('session') !== this.sessionId) throw error(404, 'Audio session expired');
         const audio = this.pipeline.audio.get(Number(url.pathname.split('/').at(-1)));
         if (!audio) throw error(404, 'Audio segment expired or unavailable');
         return new Response(audio.data, { headers: { 'Content-Type': audio.mime, 'Content-Length': String(audio.data.length) } });
