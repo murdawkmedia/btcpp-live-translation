@@ -99,3 +99,10 @@ SSE is absent, with one bounded five-second snapshot request after an abrupt clo
 Fallback messages include the close code. Do not expose raw upstream exception
 text, credentials or transcript payloads through diagnostics. Attendee snapshots
 exclude the retained operator issue. No transcript journal is created.
+
+The hosted STAGE_INSTANCE selects one shared Durable Object name. Keep it stable
+during a session; changing it starts fresh in-memory stage state for everyone.
+The catch-up release uses a fresh instance after runtime probes showed the prior
+instance still answered the old protocol despite uploaded-byte/version readback.
+Never rotate this key during an active capture or use it as a substitute for a
+storage migration. Verify new runtime fields before accepting a deployment.

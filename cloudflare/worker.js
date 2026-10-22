@@ -26,7 +26,7 @@ export default {
     let response;
     if (url.pathname.startsWith('/api/')) {
       if (!env.OPERATOR_TOKEN || !env.VIEWER_TOKEN) response = json({ error: 'Service access is not configured.' }, 503);
-      else response = await env.STAGE.get(env.STAGE.idFromName('main-stage')).fetch(request);
+      else response = await env.STAGE.get(env.STAGE.idFromName(env.STAGE_INSTANCE || 'main-stage')).fetch(request);
     } else {
       if (url.pathname === '/') url.pathname = '/index.html';
       if (url.pathname === '/listen') url.pathname = '/listen.html';

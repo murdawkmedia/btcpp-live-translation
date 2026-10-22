@@ -8,6 +8,6 @@
   "durable_objects": { "bindings": [{ "name": "STAGE", "class_name": "StageSession" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StageSession"] }],
   "ai": { "binding": "AI" },
-  "vars": { "PROFILE": "cloud", "TARGET_LANGUAGE": "ko", "EVENT_NAME": "Bitcoin++", "STAGE_NAME": "Main Stage" },
+  "vars": { "PROFILE": "cloud", "TARGET_LANGUAGE": "ko", "EVENT_NAME": "Bitcoin++", "STAGE_NAME": "Main Stage", "STAGE_INSTANCE": "main-stage-catchup-v1" },
   "observability": { "enabled": false }
 }
