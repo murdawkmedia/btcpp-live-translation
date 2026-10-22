@@ -121,3 +121,10 @@ new IDs can be reused. Speech captured during reconnect is discarded with a
 visible possible-gap notice; it is not recorded or replayed. This recovery does
 not establish the cause of a platform reset or promise gapless delivery. After
 three unsuccessful attempts the input is released and a manual retry is offered.
+
+A native Workers AI daily-free-allocation error stops without an immediate retry.
+The operator sees an explicit exhausted-allowance message and the daily 00:00 UTC
+reset/Workers Paid options. Do not treat quota exhaustion as a transport failure
+or silently change account billing. A Free-plan long test cannot continue after
+its daily allowance is exhausted; provider acceptance remains pending until reset
+or an explicitly authorized billing change.

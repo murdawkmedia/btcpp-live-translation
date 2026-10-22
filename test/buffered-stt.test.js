@@ -138,3 +138,17 @@ test('an extended cloud slowdown keeps capture open with bounded audio and warns
   bridge.finish(); release(); await closed;
   assert.ok(lengths.every(seconds => seconds <= 30));
 });
+
+test('a native Cloudflare daily allocation error stops without retry and explains the quota', async () => {
+  let calls = 0;
+  const { bridge, closed } = capture(async () => {
+    calls++; throw Error('AiError: you have used up your daily free allocation of 10,000 neurons. private fixture response');
+  });
+  const failure = assert.rejects(closed, error => {
+    assert.match(error.message, /daily free AI allowance.*exhausted/);
+    assert.match(error.message, /00:00 UTC|Workers Paid/);
+    assert.doesNotMatch(error.message, /private fixture/); return true;
+  });
+  for (let i = 0; i < 5; i++) bridge.send(speech()); bridge.finish(); await failure;
+  assert.equal(calls, 1, 'An exhausted daily allowance cannot recover through an immediate retry');
+});

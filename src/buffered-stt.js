@@ -24,7 +24,9 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
   const prompt = cloud ? prefix + hints.join(', ') + '.' : hints.join(', ');
   const close = () => { if (!closed) { closed = true; onClosed?.(); } };
   const fail = message => { controller.abort(); ended = true; chunks = []; queue.length = 0; onError(message); close(); };
+  const quotaError = error => cloud && /daily free allocation/i.test(String(error?.message || ''));
   const failureMessage = error => {
+    if (quotaError(error)) return 'Cloudflare’s daily free AI allowance is exhausted. Wait for the 00:00 UTC reset or enable Workers Paid.';
     if (error.code === 'missing_word_timing') return 'Recognition returned text without word timings after retry. Capture stopped to avoid repeating speech.';
     const status = Number(error.status || error.statusCode);
     if (status === 429) return 'Recognition service rate limit reached after retry. Wait briefly, then restart capture.';
@@ -54,7 +56,7 @@ export function connectBufferedTranscriber(config, { topic, context = '', onRead
         if (cloud && text && !words.length && (!job.final || timed)) throw Object.assign(Error('Missing word timing'), { code: 'missing_word_timing' });
         return { text, words };
       } catch (error) {
-        if (attempt + 1 === attempts || controller.signal.aborted || [400, 401, 403].includes(Number(error.status || error.statusCode))) throw error;
+        if (attempt + 1 === attempts || controller.signal.aborted || quotaError(error) || [400, 401, 403].includes(Number(error.status || error.statusCode))) throw error;
       } finally { lastRequestMs = Date.now() - requestStartedAt; requestStartedAt = 0; }
     }
   }
