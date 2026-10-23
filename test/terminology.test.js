@@ -58,8 +58,15 @@ test('repeated candidate spellings do not masquerade as a bitfield context', asy
 
 test('default conference recognition hints include the observed consensus acronyms', () => {
   const hints = selectHints('protocol', { limit: 50, maxLength: 20 });
-  for (const term of ['BIP 54', 'BIP 30', 'UASF', 'URSF', 'UTXO']) assert.ok(hints.includes(term), term);
+  for (const term of ['BIP 54', 'BIP 30', 'UASF', 'URSF', 'UTXO', 'Utreexo']) assert.ok(hints.includes(term), term);
   assert.equal(hints.length, 50); assert.ok(hints.every(term => term.length <= 20));
+});
+
+test('Utreexo is distinct from UTXO and supplies proposal context without replacing either', async () => {
+  const p = new Pipeline(provider()); await p.submit('Does Bit54 help Utreexo? UTXO is a separate acronym.');
+  assert.equal(p.history[0].english, 'Does BIP 54 help Utreexo? UTXO is a separate acronym.');
+  const matched = matchTerms('Utreexo and UTXO').map(t => t.term);
+  assert.ok(matched.includes('Utreexo')); assert.ok(matched.includes('UTXO'));
 });
 
 test('talk context selects proposal identifiers and AI hardware under the same provider limits', () => {

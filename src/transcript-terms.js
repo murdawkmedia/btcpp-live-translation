@@ -4,7 +4,7 @@ const boundary = '[\\p{L}\\p{N}_`./\\\\-]';
 const endBoundary = '(?![\\p{L}\\p{N}_`/\\\\-]|\\.[a-z])';
 const explicitBip = new RegExp(`(?<!${boundary})b\\s*i\\s*p[ -]?(\\d{1,4})${endBoundary}`, 'giu');
 const bit54 = new RegExp(`(?<!${boundary})bit[ -]?(54)${endBoundary}`, 'giu');
-const proposalContext = /\b(?:UTXOs?|consensus cleanup|soft[ -]fork|BIP[ -]30)\b/i;
+const proposalContext = /\b(?:UTXOs?|Utreexo|consensus cleanup|soft[ -]fork|BIP[ -]30)\b/i;
 const bitfieldContext = /\b(?:mask|bitmap|bitfield|bitwise|offset|position|register|shift|flag|integer|binary|hex|bytes?|bits?)\b/i;
 
 export function normalizeTranscript(text) {

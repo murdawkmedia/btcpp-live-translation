@@ -3266,6 +3266,16 @@
       "priority": 3,
       "preserve": true,
       "source": "https://openai.com/"
+    },
+    {
+      "term": "Utreexo",
+      "category": "protocol",
+      "aliases": [
+        "u tree ex oh"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/utreexo/utreexo"
     }
   ]
 }
