@@ -13,6 +13,7 @@ npm run check
 npm run build:cloud
 npx wrangler secret put OPERATOR_TOKEN
 npx wrangler secret put VIEWER_TOKEN
+npx wrangler secret put PROVIDER_SETTINGS_KEY
 npm run deploy
 ```
 
@@ -48,3 +49,26 @@ hosted capture session. No scheduled deployment or mirroring job is installed.
 
 Nsite/GitHub Pages are possible future static-client hosts, but this release
 uses same-origin API connections and is deployed as a complete Cloudflare app.
+
+## Operator-entered provider keys
+
+Generate `PROVIDER_SETTINGS_KEY` privately as 32 random bytes encoded in 64 hex
+characters, enter it through Wrangler's secret prompt, and retain it in your
+private credential store. This is a wrapping key for AES-256-GCM, not an API key
+or operator login token. Never put its value in vars, source, shell arguments or
+logs. Do not regenerate it on every deployment.
+
+The operator Providers panel saves encrypted settings to the existing stage
+Durable Object. Only ciphertext, random IV and version are persisted; the
+wrapping key stays in Worker secrets. Keys are not retrievable through the app.
+Provider selection and credentials survive object restarts and deployments while
+the wrapping key and STAGE_INSTANCE remain stable. Caption history stays in memory.
+
+Environment keys remain supported as the base configuration. Clearing a saved
+override falls back to the environment key, if any; remove an environment key
+through private deployment configuration when it must no longer be available.
+
+To avoid the Workers AI allowance entirely, select external recognition and
+translation, and either disable voice or select an external voice provider too.
+An OpenRouter translation key by itself does not replace this app's transcription
+provider. Saving configuration does not upgrade Cloudflare billing or buy credits.

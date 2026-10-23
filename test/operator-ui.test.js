@@ -4,8 +4,9 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 // Run the real page handlers; only browser/media/network boundaries are fixtures.
-const code = (await readFile(new URL('../public/app.js', import.meta.url), 'utf8'))
-  .replace("import { chooseAudio } from './capture.js';", '');
+const code = (await readFile(new URL('../public/provider-settings.js', import.meta.url), 'utf8')).replace('export function ', 'function ') + '\n' +
+  (await readFile(new URL('../public/app.js', import.meta.url), 'utf8'))
+  .replace("import { chooseAudio } from './capture.js';", '').replace("import { initProviderSettings } from './provider-settings.js';", '');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 async function desk({ chooser, ready = true, connectionErrorAfter = Infinity } = {}) {
   const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000, pendingSnapshot;

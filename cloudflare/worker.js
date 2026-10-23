@@ -3,6 +3,8 @@ import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Buffer } from 'node:buffer';
 import QRCode from 'qrcode';
 import { configFromEnv, providerStatus } from '../src/config.js';
+import { ProviderSettings, secureProviderOrigin } from '../src/provider-settings.js';
+import { checkProvider } from '../src/provider-check.js';
 import { languages, language } from '../src/languages.js';
 import { terms, topics, selectHints } from '../src/glossary.js';
 import { Pipeline } from '../src/pipeline.js';
@@ -42,9 +44,19 @@ export default {
 export class StageSession extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env); this.ctx = ctx; this.env = env;
-    this.config = configFromEnv(env); if (env.AI) this.config.runAI = (model, input) => env.AI.run(model, input);
+    const config = configFromEnv(env); if (env.AI) config.runAI = (model, input) => env.AI.run(model, input);
+    this.settings = new ProviderSettings(config, { key: env.PROVIDER_SETTINGS_KEY, storage: {
+      get: () => ctx.storage.get('provider-settings-v1'), put: value => ctx.storage.put('provider-settings-v1', value)
+    } });
     this.target = this.config.targetLanguage; this.subscribers = new Set(); this.active = null;
     this.mode = 'idle'; this.phase = 'idle'; this.replace(createRehearsalProvider());
+  }
+  get config() { return this.settings.config; }
+  ready() { return !this.settings.problem && providerStatus(this.config).ready; }
+  async openProviderSocket(url, headers) {
+    const response = await fetch(url.replace(/^ws/, 'http'), { headers: { ...headers, Upgrade: 'websocket' }, signal: AbortSignal.timeout(8000) });
+    if (!response.webSocket) { await response.body?.cancel(); throw Error('Transcription upgrade failed'); }
+    response.webSocket.accept(); return response.webSocket;
   }
   state() {
     return { mode: this.mode, phase: this.phase, sessionId: this.sessionId, listeners: this.subscribers.size, history: this.pipeline.history,
@@ -96,10 +108,11 @@ export class StageSession extends DurableObject {
     const attendee = operator || same(url.searchParams.get('token'), this.env.VIEWER_TOKEN);
     const originOK = request.headers.get('Origin') === url.origin;
     try {
+      await this.settings.ready;
       if (url.pathname === '/api/capture') {
         if (!operator || !originOK) throw error(401, 'Operator access required');
         if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') throw error(426, 'WebSocket required');
-        if (!providerStatus(this.config).ready || this.active) throw error(409, 'Stop the current session or configure providers');
+        if (!this.ready() || this.active || this.settings.busy) throw error(409, 'Stop the current session or configure providers');
         const pair = new WebSocketPair(); this.capture(pair[1]);
         return new Response(null, { status: 101, webSocket: pair[0] });
       }
@@ -111,6 +124,18 @@ export class StageSession extends DurableObject {
           return json({ ok: true }, 200, { 'Set-Cookie': `btcpp_operator=${this.env.OPERATOR_TOKEN}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${url.protocol === 'https:' ? '; Secure' : ''}` });
         }
         if (!operator) throw error(401, 'Operator access required');
+        if (url.pathname.startsWith('/api/providers') && !secureProviderOrigin(request.headers.get('Origin'))) throw error(403, 'Private provider settings require HTTPS or a local loopback connection.');
+        if (url.pathname === '/api/providers') {
+          if (this.active) throw error(409, 'Stop the session before changing providers');
+          return json(await this.settings.update(body));
+        }
+        if (url.pathname === '/api/providers/test') {
+          if (this.active) throw error(409, 'Stop the session before testing providers');
+          return json(await this.settings.withLock(() => checkProvider({ ...this.config, targetLanguage: this.target }, body.stage, {
+            openSocket: (url, headers) => this.openProviderSocket(url, headers)
+          })));
+        }
+        if (this.settings.busy && ['/api/rehearsal', '/api/settings'].includes(url.pathname)) throw error(409, 'Provider settings are busy. Try again shortly.');
         if (url.pathname === '/api/stop') { this.halt(); return json({ ok: true }); }
         if (url.pathname === '/api/settings') {
           if (this.active) throw error(409, 'Stop the session before changing language');
@@ -133,13 +158,17 @@ export class StageSession extends DurableObject {
       }
       if (request.method !== 'GET') throw error(405, 'Method not allowed');
       if (url.pathname === '/api/health') return json({ service: 'btcpp-live-translation', mode: this.mode, phase: this.phase,
-        liveReady: providerStatus(this.config).ready, operatorAuthenticated: operator });
+        liveReady: this.ready(), operatorAuthenticated: operator });
+      if (url.pathname === '/api/providers') {
+        if (!operator) throw error(401, 'Operator access required');
+        return json(this.settings.snapshot());
+      }
       if (url.pathname === '/api/config') {
         if (!operator) throw error(401, 'Operator access required');
         const viewerUrl = `${url.origin}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
         return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null, viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
-          liveReady: providerStatus(this.config).ready, providers: providerStatus(this.config), languages,
+          liveReady: this.ready(), providers: providerStatus(this.config), languages,
           topics, termCount: terms.length, publicReady: true, ttsProvider: this.config.ttsProvider });
       }
       if (url.pathname === '/api/terms') {
@@ -208,11 +237,7 @@ export class StageSession extends DurableObject {
             } };
           source.bridge = ['workers-ai', 'local'].includes(this.config.sttProvider)
             ? connectBufferedTranscriber(this.config, handlers)
-            : connectStreamingTranscriber(this.config, handlers, async (url, headers) => {
-              const response = await fetch(url.replace(/^ws/, 'http'), { headers: { ...headers, Upgrade: 'websocket' } });
-              if (!response.webSocket) throw Error('Transcription upgrade failed');
-              response.webSocket.accept(); return response.webSocket;
-            });
+            : connectStreamingTranscriber(this.config, handlers, (url, headers) => this.openProviderSocket(url, headers));
         } else if (message.type === 'stop' && started) { this.phase = 'finishing'; source.bridge.finish(); this.status(); }
         else this.halt('Invalid capture control message.');
       } catch { this.halt('Invalid capture control message.'); }

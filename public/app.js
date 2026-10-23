@@ -1,6 +1,7 @@
 import { chooseAudio } from './capture.js';
+import { initProviderSettings } from './provider-settings.js';
 const $ = id => document.getElementById(id);
-let config, terms = [], events, capture, socket;
+let config, terms = [], events, capture, socket, providerPanel, providerBusy = false;
 let localPhase = 'idle', localMode = 'idle', attempt = 0, serverState = { phase: 'idle', mode: 'idle' }, lastIssue = '';
 let lastEventAt = Date.now(), polling = false, cancelRetry;
 const notice = (message, warning = false) => { $('notice').textContent = message; $('notice').classList.toggle('warning', warning); };
@@ -24,9 +25,10 @@ function renderStatus(update = {}) {
   const local = localPhase !== 'idle';
   const state = local ? { ...serverState, phase: localPhase === 'live' && serverState.phase === 'reconnecting' ? 'reconnecting' : localPhase, mode: localMode } : serverState;
   const running = local || ['live', 'connecting', 'reconnecting', 'finishing'].includes(state.phase);
-  $('start').disabled = running || !config.liveReady; $('rehearsal').disabled = running; $('stop').disabled = !running;
+  providerPanel?.setRunning(running);
+  $('start').disabled = running || providerBusy || !config.liveReady; $('rehearsal').disabled = running || providerBusy; $('stop').disabled = !running;
   $('soundcheck').disabled = running;
-  $('target').disabled = running; $('topic').disabled = running; $('context').disabled = running;
+  $('target').disabled = running || providerBusy; $('topic').disabled = running; $('context').disabled = running;
   if (state.targetLanguage) { $('target').value = state.targetLanguage; $('target-code').textContent = state.targetLanguage.toUpperCase(); }
   $('status').textContent = state.phase === 'live' ? (state.mode === 'rehearsal' ? 'SAMPLE SESSION' : 'ON AIR') : state.phase.toUpperCase();
   $('status').classList.toggle('live', state.phase === 'live');
@@ -82,7 +84,15 @@ async function openDesk() {
   $('qr').src = config.qr; $('viewer-link').href = config.viewerUrl;
   $('public-note').textContent = config.publicReady ? 'Attendee link uses the configured public origin. Test it on a physical phone.' : 'Local rehearsal link. Phones need a reachable HTTPS address configured as PUBLIC_BASE_URL.';
   terms = (await api('/api/terms')).terms; renderTerms(); renderStatus(config);
-  if (!config.liveReady) notice('Local rehearsal is ready. Live capture needs the server’s provider configuration; see README.md.', true);
+  providerPanel ||= initProviderSettings({ api,
+    onBusy: value => { providerBusy = value; renderStatus(); },
+    onChange: async () => {
+      config = await api('/api/config'); renderStatus(config);
+      $('provider-note').textContent = `${config.providers.recognition} recognition · ${config.providers.translation} translation · ${config.providers.speech === 'none' ? 'voice off' : config.providers.speech + ' speech'}. Use provider checks before going live.`;
+    }
+  });
+  await providerPanel.load(); providerPanel.setRunning(localPhase !== 'idle' || ['live', 'connecting', 'reconnecting', 'finishing'].includes(serverState.phase));
+  if (!config.liveReady) notice('Set up recognition and translation in Providers below. Voice is optional; local rehearsal is available.', true);
   events?.close(); events = new EventSource('/api/events');
   events.onmessage = ({ data }) => {
     const event = JSON.parse(data); lastEventAt = Date.now();

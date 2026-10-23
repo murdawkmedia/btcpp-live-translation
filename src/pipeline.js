@@ -48,6 +48,7 @@ export class Pipeline extends EventEmitter {
         this.history.push(segment);
         while (this.history.length > this.maxHistory) this.removeAudio(this.history.shift().id);
         this.event({ type: 'caption', segment: { ...segment } });
+        if (this.provider.speechEnabled === false) { item.resolve(true); continue; }
         while (this.speechQueue.length >= this.maxSpeechQueue) {
           const skipped = this.speechQueue.shift(); skipped.item.resolve(true);
           this.event({ type: 'issue', stage: 'speech', message: 'Voice is falling behind; older audio skipped. Captions remain available.' });

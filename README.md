@@ -144,3 +144,31 @@ Unexpected live transport resets automatically reconnect with the selected audio
 input, with three attempts per interruption. Stop cancels recovery. Explicit
 provider failures remain visible and require a manual restart. Speech during
 reconnect may be missing; source audio is not recorded or replayed.
+
+## Private provider settings
+
+After operator login, open **05 / Providers**. Choose transcription, translation
+and optional voice independently. Enter your ElevenLabs, OpenRouter or xAI API
+keys into the password fields and save. Blank fields keep existing keys; Remove
+saved key deletes an app override and reveals any server environment credential
+again. Keys are never returned to the browser or sent to attendees. Save does not
+call a provider. Stop the session before changing settings.
+
+For English-to-Korean captions with your own services, choose **ElevenLabs**
+transcription, **OpenRouter** translation and **Off · captions only** voice. The
+translation model ID is editable; ensure it is available to your account. Enable
+ElevenLabs voice with a voice ID, or xAI voice with your xAI key when desired.
+One xAI key can serve all three stages when each is explicitly selected.
+
+The check buttons use saved settings and may consume credits. Streaming
+transcription checks authenticate the connection without sending audio; they do
+not measure word accuracy. Translation and voice use short fixed sample text.
+Passing checks do not establish sustained, Korean or event acceptance.
+
+The local runner encrypts settings under ignored `.runtime/`, with a separate
+private wrapping-key file and restrictive file permissions. Protect the directory
+with OS permissions on Windows; do not copy it into source packages. Hosted
+settings use encrypted Durable Object storage and a separate Worker secret; see
+[Cloudflare setup](docs/cloudflare.md). Keep the encryption key stable and recover
+it together with encrypted settings. Missing or corrupt stored settings block live
+capture visibly rather than silently choosing a different provider.

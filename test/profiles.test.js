@@ -47,6 +47,12 @@ test('the portable runner defaults to local services without using present cloud
   assert.match(c.localSttUrl, /^http:\/\/127\.0\.0\.1:/);
 });
 
+test('explicit translation providers get matching models rather than another provider default', () => {
+  assert.equal(settings.configFromEnv({ PROFILE: 'cloud', TRANSLATION_PROVIDER: 'xai' }).translationModel, 'grok-4.7');
+  assert.equal(settings.configFromEnv({ TRANSLATION_PROVIDER: 'openrouter' }).translationBase, undefined);
+  assert.equal(settings.configFromEnv({ TRANSLATION_PROVIDER: 'openrouter' }).translationModel, 'google/gemini-2.5-flash');
+});
+
 test('OpenRouter translation carries the chosen target and Bitcoin glossary, not the ElevenLabs key', async t => {
   let received;
   const server = createServer(async (req, res) => {

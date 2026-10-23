@@ -8,17 +8,20 @@ import { Pipeline } from './pipeline.js';
 import { createLiveProvider, connectTranscriber } from './providers.js';
 import { createRehearsalProvider, samples } from './rehearsal.js';
 import { providerStatus } from './config.js';
+import { ProviderSettings, secureProviderOrigin } from './provider-settings.js';
+import { checkProvider } from './provider-check.js';
 import { languages, language } from './languages.js';
 
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const fail = (status, message) => Object.assign(Error(message), { status });
-const staticFiles = new Map(['index.html', 'listen.html', 'app.js', 'listen.js', 'styles.css', 'capture.js', 'pcm-worklet.js', 'audio-core.js'].map(name => ['/' + name, name]));
+const staticFiles = new Map(['index.html', 'listen.html', 'app.js', 'listen.js', 'styles.css', 'capture.js', 'pcm-worklet.js', 'audio-core.js', 'provider-settings.js'].map(name => ['/' + name, name]));
 const mime = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' };
 
 export function createApp(config = {}) {
   const operatorToken = config.operatorToken || randomBytes(32).toString('hex');
   const viewerToken = config.viewerToken || randomBytes(24).toString('hex');
-  const providers = providerStatus(config), liveReady = providers.ready;
+  const settings = new ProviderSettings(config, { storage: config.settingsStorage, key: config.settingsKey });
+  const ready = () => !settings.problem && providerStatus(settings.config).ready;
   let targetLanguage = config.targetLanguage || 'ko';
   const subscribers = new Set();
   let pipeline, sessionId, lastIssue = null, active = null, mode = 'idle', phase = 'idle', closed = false;
@@ -80,6 +83,7 @@ export function createApp(config = {}) {
     res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
     try {
+      await settings.ready; config = settings.config;
       const url = new URL(req.url, 'http://local');
       if (req.method === 'POST') {
         if (!originAllowed(req)) throw fail(403, 'Request origin not allowed');
@@ -90,6 +94,18 @@ export function createApp(config = {}) {
           return json(res, { ok: true });
         }
         if (!operator(req)) throw fail(401, 'Operator access required');
+        if (url.pathname.startsWith('/api/providers') && !secureProviderOrigin(req.headers.origin)) throw fail(403, 'Private provider settings require HTTPS or a local loopback connection.');
+        if (url.pathname === '/api/providers') {
+          if (active) throw fail(409, 'Stop the session before changing providers');
+          return json(res, await settings.update(body));
+        }
+        if (url.pathname === '/api/providers/test') {
+          if (active) throw fail(409, 'Stop the session before testing providers');
+          return json(res, await settings.withLock(() => checkProvider({ ...settings.config, targetLanguage }, body.stage, {
+            openSocket: (url, headers) => new WebSocket(url, { headers, handshakeTimeout: 8000, maxPayload: 512000 })
+          })));
+        }
+        if (settings.busy && ['/api/rehearsal', '/api/settings'].includes(url.pathname)) throw fail(409, 'Provider settings are busy. Try again shortly.');
         if (url.pathname === '/api/rehearsal') {
           if (active) throw fail(409, 'Stop the current session first');
           targetLanguage = 'ko'; mode = 'rehearsal'; phase = 'live'; replacePipeline(createRehearsalProvider());
@@ -111,12 +127,16 @@ export function createApp(config = {}) {
         throw fail(404, 'Unknown operation');
       }
       if (req.method !== 'GET') throw fail(405, 'Method not allowed');
-      if (url.pathname === '/api/health') return json(res, { service: 'btcpp-live-translation', mode, phase, liveReady, operatorAuthenticated: operator(req) });
+      if (url.pathname === '/api/health') return json(res, { service: 'btcpp-live-translation', mode, phase, liveReady: ready(), operatorAuthenticated: operator(req) });
+      if (url.pathname === '/api/providers') {
+        if (!operator(req)) throw fail(401, 'Operator access required');
+        return json(res, settings.snapshot());
+      }
       if (url.pathname === '/api/config') {
         if (!operator(req)) throw fail(401, 'Operator access required');
         const origin = config.publicBaseUrl || `http://${server.address().address === '::1' ? '[::1]' : 'localhost'}:${server.address().port}`;
         const viewerUrl = `${origin.replace(/\/$/, '')}/listen?token=${viewerToken}`;
-        return json(res, { ...state(), lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady, topics, languages, providers, termCount: terms.length,
+        return json(res, { ...state(), lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady: ready(), topics, languages, providers: providerStatus(config), termCount: terms.length,
           ttsProvider: config.ttsProvider || 'xai', publicReady: Boolean(config.publicBaseUrl), viewerUrl,
           qr: await QRCode.toDataURL(viewerUrl, { width: 200, margin: 1 }) });
       }
@@ -159,11 +179,12 @@ export function createApp(config = {}) {
     }
   });
   const wss = new WebSocketServer({ noServer: true, maxPayload: 16000 });
-  server.on('upgrade', (req, socket, head) => {
+  server.on('upgrade', async (req, socket, head) => {
+    await settings.ready; config = settings.config;
     if (req.url !== '/api/capture' || !operator(req) || !originAllowed(req)) {
       socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'); return;
     }
-    if (!liveReady || active) { socket.end('HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n'); return; }
+    if (!ready() || active || settings.busy) { socket.end('HTTP/1.1 409 Conflict\r\nConnection: close\r\n\r\n'); return; }
     wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws, req));
   });
   wss.on('connection', socket => {

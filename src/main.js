@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, rename, unlink } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { createApp } from './server.js';
 import { configFromEnv } from './config.js';
@@ -17,6 +17,20 @@ async function capability(name, supplied) {
 }
 const app = createApp({ ...configFromEnv(process.env), operatorToken: await capability('operator-token', process.env.OPERATOR_TOKEN),
   viewerToken: await capability('viewer-token', process.env.VIEWER_TOKEN),
+  settingsKey: await capability('provider-settings-key', process.env.PROVIDER_SETTINGS_KEY),
+  settingsStorage: {
+    async get() {
+      try { return JSON.parse(await readFile(new URL('../.runtime/provider-settings.json', import.meta.url), 'utf8')); }
+      catch (error) { if (error.code !== 'ENOENT') throw error; }
+    },
+    async put(value) {
+      const temporary = new URL(`../.runtime/provider-settings-${randomBytes(12).toString('hex')}.tmp`, import.meta.url);
+      try {
+        await writeFile(temporary, JSON.stringify(value), { mode: 0o600, flag: 'wx' });
+        await rename(temporary, new URL('../.runtime/provider-settings.json', import.meta.url));
+      } finally { await unlink(temporary).catch(() => {}); }
+    }
+  },
   publicBaseUrl: process.env.PUBLIC_BASE_URL });
 const port = Number(process.env.PORT || 4317);
 app.server.listen(port, process.env.HOST || '127.0.0.1', () => {

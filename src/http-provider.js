@@ -16,7 +16,7 @@ export async function bytes(response, max = 6 * 1024 * 1024) {
 export function createLiveProvider(config = {}) {
   const target = config.targetLanguage || 'ko';
   const base = config.base || 'https://api.x.ai/v1';
-  return { targetLanguage: target,
+  return { targetLanguage: target, speechEnabled: config.ttsProvider !== 'none',
     async translate(text, signal, previous = []) {
       const provider = config.translationProvider || 'xai';
       const guard = provider === 'workers-ai' ? protectCurrencyUnits(text) : null;

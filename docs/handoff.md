@@ -128,3 +128,22 @@ reset/Workers Paid options. Do not treat quota exhaustion as a transport failure
 or silently change account billing. A Free-plan long test cannot continue after
 its daily allowance is exhausted; provider acceptance remains pending until reset
 or an explicitly authorized billing change.
+
+## Private provider controls
+
+Operator-only GET/POST `/api/providers` exposes safe choices and key presence;
+POST `/api/providers/test` checks saved settings with bounded sample requests.
+All mutations require the operator cookie and same-origin POST. An idle/busy
+guard prevents provider changes/checks overlapping live capture. No attendee
+endpoint, event or diagnostic contains credentials. Arbitrary API base URLs
+remain server configuration, not browser-editable settings.
+
+AES-GCM overrides persist before activation. Cloudflare uses the stable stage's
+`provider-settings-v1` record plus `PROVIDER_SETTINGS_KEY`; the local runner uses
+private ignored `.runtime` files. Preserve the wrapping key for recovery. Missing
+or corrupt stored settings fail closed. Clearing app keys reveals any environment
+keys; it does not delete deployment secrets. No paid provider fallback is automatic.
+
+`ttsProvider=none` makes speech optional for readiness and skips synthesis queues.
+Translation model defaults follow the selected provider, avoiding Cloudflare or
+local model IDs/endpoints leaking into an external provider selection.

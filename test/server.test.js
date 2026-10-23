@@ -30,6 +30,52 @@ test('capabilities, origins, body limits and audio access are enforced', async t
   assert.equal(config.termCount, 345);
 });
 
+test('provider settings require the operator and origin, save privately and lock during sessions', async t => {
+  let encrypted;
+  const { request } = await start(t, { settingsKey: 'cd'.repeat(32), settingsStorage: { get: async () => encrypted, put: async value => { encrypted = value; } } });
+  const patch = { sttProvider: 'elevenlabs', translationProvider: 'openrouter', ttsProvider: 'none', keys: { elevenlabs: 'private-eleven-fixture', openrouter: 'private-router-fixture' } };
+  assert.equal((await request('/api/providers')).status, 401);
+  assert.equal((await request('/api/providers', { body: patch })).status, 401);
+  assert.equal((await request('/api/providers', { auth: true, origin: 'https://other.invalid', body: patch })).status, 403);
+  const saved = await request('/api/providers', { auth: true, body: patch }); assert.equal(saved.status, 200);
+  const state = await saved.json(); assert.equal(state.keys.elevenlabs.configured, true); assert.equal(state.providers.ready, true);
+  for (const path of ['/api/providers', '/api/config', '/api/health', '/api/listener?token=viewer-test-capability']) {
+    const data = await (await request(path, { auth: true })).text(); assert.equal(data.includes('private-eleven-fixture'), false); assert.equal(data.includes('private-router-fixture'), false);
+  }
+  assert.equal(JSON.stringify(encrypted).includes('private-eleven-fixture'), false);
+  await request('/api/rehearsal', { auth: true, body: {} });
+  assert.equal((await request('/api/providers', { auth: true, body: { ttsProvider: 'xai' } })).status, 409);
+  assert.equal((await request('/api/providers/test', { auth: true, body: { stage: 'recognition' } })).status, 409);
+});
+
+test('a provider check receives an immediate streaming greeting and closes the socket', { timeout: 15000 }, async t => {
+  const http = createServer(), wss = new WebSocketServer({ server: http }); let messages = 0;
+  wss.on('connection', ws => { ws.send(JSON.stringify({ message_type: 'session_started' })); ws.on('message', () => messages++); });
+  http.listen(0, '127.0.0.1'); await once(http, 'listening');
+  t.after(() => { for (const ws of wss.clients) ws.terminate(); wss.close(); http.close(); });
+  const { request } = await start(t, { sttProvider: 'elevenlabs', elevenKey: 'private-fixture-key', sttUrl: `ws://127.0.0.1:${http.address().port}/stt` });
+  const response = await request('/api/providers/test', { auth: true, body: { stage: 'recognition' } });
+  const result = await response.json(); assert.equal(result.ok, true); assert.equal(messages, 0); assert.ok(result.elapsedMs < 1000);
+});
+
+test('private provider keys cannot be submitted through a public plaintext HTTP origin', async t => {
+  const { request } = await start(t, { publicBaseUrl: 'http://insecure.example', settingsKey: 'ab'.repeat(32), settingsStorage: { get: async () => undefined, put: async () => {} } });
+  const response = await request('/api/providers', { auth: true, origin: 'http://insecure.example', body: { ttsProvider: 'none' } });
+  assert.equal(response.status, 403);
+});
+
+test('an in-flight private settings write prevents capture and rehearsal', { timeout: 5000 }, async t => {
+  let release, writing; const entered = new Promise(resolve => { writing = resolve; });
+  const { base, request } = await start(t, { xaiKey: 'fixture-key', settingsKey: 'cd'.repeat(32), settingsStorage: { get: async () => undefined, put: () => { writing(); return new Promise(resolve => { release = resolve; }); } } });
+  const saving = request('/api/providers', { auth: true, body: { ttsProvider: 'none' } }); await entered;
+  assert.equal((await request('/api/rehearsal', { auth: true, body: {} })).status, 409);
+  const code = await new Promise(resolve => {
+    const ws = new WebSocket(base.replace('http:', 'ws:') + '/api/capture', { headers: { Cookie: 'btcpp_operator=operator-test-capability', Origin: base } });
+    ws.on('unexpected-response', (_, res) => { res.resume(); resolve(res.statusCode); ws.terminate(); }); ws.on('error', () => {});
+  });
+  assert.equal(code, 409); release(); assert.equal((await saving).status, 200);
+});
+
 test('a failed live session reports its reason over capture and retains it for the operator', async t => {
   const { base, request } = await start(t, { sttProvider: 'workers-ai', translationProvider: 'workers-ai', ttsProvider: 'workers-ai', runAI: async () => { throw Error('private upstream details'); } });
   const ws = new WebSocket(base.replace('http:', 'ws:') + '/api/capture', { headers: { Cookie: 'btcpp_operator=operator-test-capability', Origin: base } });

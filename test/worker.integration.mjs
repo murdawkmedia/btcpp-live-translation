@@ -42,9 +42,9 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     migrations: [{ tag: 'v1', new_sqlite_classes: ['StageSession'] }],
     vars: { PROFILE: 'cloud', STT_PROVIDER: 'elevenlabs', TRANSLATION_PROVIDER: 'xai', TTS_PROVIDER: 'xai',
       ELEVENLABS_API_KEY: 'eleven-fixture-only', XAI_API_KEY: 'xai-fixture-only', XAI_BASE_URL: fixture,
-      STT_URL: fixture.replace('http:', 'ws:') + '/stt', OPERATOR_TOKEN: 'operator-fixture-only', VIEWER_TOKEN: 'viewer-fixture-only', STAGE_INSTANCE: 'fixture-stage' } };
+      STT_URL: fixture.replace('http:', 'ws:') + '/stt', OPERATOR_TOKEN: 'operator-fixture-only', VIEWER_TOKEN: 'viewer-fixture-only', STAGE_INSTANCE: 'fixture-stage', PROVIDER_SETTINGS_KEY: '12'.repeat(32) } };
   await writeFile('.runtime/worker-live-fixture.json', JSON.stringify(config));
-  const child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = ''; for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { logs = (logs + data).slice(-5000); });
   t.after(async () => { child.kill('SIGTERM'); await Promise.race([once(child, 'exit'), new Promise(resolve => setTimeout(resolve, 3000))]); });
   let ready = false;
@@ -61,10 +61,30 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.deepEqual(waiting.history, []); assert.equal(waiting.viewerUrl, undefined);
   const login = await fetch(origin + '/api/login', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: 'operator-fixture-only' }) });
   assert.equal(login.status, 200); const cookie = login.headers.get('set-cookie').split(';')[0];
+  const privatePost = (path, body, from = origin) => fetch(origin + path, { method: 'POST', headers: { Origin: from, Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  assert.equal((await fetch(origin + '/api/providers?token=viewer-fixture-only')).status, 401);
+  assert.equal((await privatePost('/api/providers', { ttsProvider: 'none' }, 'https://other.invalid')).status, 403);
+  const saved = await privatePost('/api/providers', { sttProvider: 'elevenlabs', translationProvider: 'xai', ttsProvider: 'none', keys: { elevenlabs: 'eleven-fixture-only', xai: 'xai-fixture-only' } });
+  assert.equal(saved.status, 200); const safe = await saved.text(); assert.equal(safe.includes('eleven-fixture-only'), false); assert.equal(safe.includes('xai-fixture-only'), false);
+  assert.equal((await (await privatePost('/api/providers/test', { stage: 'recognition' })).json()).ok, true);
+  assert.equal((await (await privatePost('/api/providers/test', { stage: 'speech' })).json()).ok, true);
+  assert.equal(speech, 0); assert.equal(pcm, 0, 'Recognition check must not send audio');
+  const exited = once(child, 'exit'); child.kill('SIGTERM'); await exited;
+  child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { logs = (logs + data).slice(-5000); });
+  let restored;
+  for (let i = 0; i < 100; i++) {
+    try { const response = await fetch(origin + '/api/providers', { headers: { Cookie: cookie } }); if (response.ok) { restored = await response.json(); break; } } catch {}
+    await new Promise(resolve => setTimeout(resolve, 150));
+  }
+  assert.equal(restored?.keys.elevenlabs.source, 'saved', 'Worker restart must restore encrypted provider credentials');
+  assert.equal(restored?.ttsProvider, 'none');
+  await privatePost('/api/providers', { ttsProvider: 'xai' });
   const ws = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
   t.after(() => ws.terminate()); await once(ws, 'open');
   const message = once(ws, 'message'); ws.send(JSON.stringify({ type: 'start', topic: 'cryptography' }));
   assert.match((await message)[0].toString(), /ready/); ws.send(Buffer.alloc(3200));
+  assert.equal((await privatePost('/api/providers', { ttsProvider: 'none' })).status, 409);
   let status;
   for (let i = 0; i < 100; i++) {
     status = await (await fetch(origin + '/api/config', { headers: { Cookie: cookie } })).json();
