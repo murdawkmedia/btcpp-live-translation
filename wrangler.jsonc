@@ -5,8 +5,8 @@
   "compatibility_date": "2026-10-19",
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": "public", "binding": "ASSETS", "run_worker_first": true, "html_handling": "none" },
-  "durable_objects": { "bindings": [{ "name": "STAGE", "class_name": "StageSession" }] },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StageSession"] }],
+  "durable_objects": { "bindings": [{ "name": "STAGE", "class_name": "StageSession" }, { "name": "WORKSPACE_STAGE", "class_name": "WorkspaceStage" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["StageSession"] }, { "tag": "v2-workspaces", "new_sqlite_classes": ["WorkspaceStage"] }],
   "ai": { "binding": "AI" },
   "vars": { "PROFILE": "cloud", "TARGET_LANGUAGE": "ko", "EVENT_NAME": "Bitcoin++", "STAGE_NAME": "Main Stage", "STAGE_INSTANCE": "main-stage-catchup-v1" },
   "observability": { "enabled": false }

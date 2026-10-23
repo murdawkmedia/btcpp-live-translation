@@ -1,13 +1,14 @@
 import { chooseAudio } from './capture.js';
 import { initProviderSettings } from './provider-settings.js';
+import { scopedUrl, workspacePrefix, initWorkspacePanel } from './workspace.js';
 const $ = id => document.getElementById(id);
-let config, terms = [], events, capture, socket, providerPanel, providerBusy = false;
+let config, terms = [], events, capture, socket, providerPanel, workspacePanel, providerBusy = false;
 let localPhase = 'idle', localMode = 'idle', attempt = 0, serverState = { phase: 'idle', mode: 'idle' }, lastIssue = '';
 let lastEventAt = Date.now(), polling = false, cancelRetry;
 const notice = (message, warning = false) => { $('notice').textContent = message; $('notice').classList.toggle('warning', warning); };
 async function api(path, body, signal) {
-  const response = await fetch(path, { ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), ...(signal ? { signal } : {}) });
-  const value = await response.json(); if (!response.ok) throw Error(value.error || 'Request failed'); return value;
+  const response = await fetch(scopedUrl(path), { ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), ...(signal ? { signal } : {}) });
+  const value = await response.json(); if (!response.ok) throw Object.assign(Error(value.error || 'Request failed'), { status: response.status }); return value;
 }
 function renderCaption(segment) {
   if ($('captions').querySelector(`[data-id="${Number(segment.id)}"]`)) return;
@@ -84,16 +85,23 @@ async function openDesk() {
   $('qr').src = config.qr; $('viewer-link').href = config.viewerUrl;
   $('public-note').textContent = config.publicReady ? 'Attendee link uses the configured public origin. Test it on a physical phone.' : 'Local rehearsal link. Phones need a reachable HTTPS address configured as PUBLIC_BASE_URL.';
   terms = (await api('/api/terms')).terms; renderTerms(); renderStatus(config);
-  providerPanel ||= initProviderSettings({ api,
+  const eventOperator = config.workspace?.role === 'operator'; $('provider-panel').hidden = eventOperator;
+  if (!eventOperator) {
+    providerPanel ||= initProviderSettings({ api,
     onBusy: value => { providerBusy = value; renderStatus(); },
     onChange: async () => {
       config = await api('/api/config'); renderStatus(config);
       $('provider-note').textContent = `${config.providers.recognition} recognition · ${config.providers.translation} translation · ${config.providers.speech === 'none' ? 'voice off' : config.providers.speech + ' speech'}. Use provider checks before going live.`;
     }
   });
-  await providerPanel.load(); providerPanel.setRunning(localPhase !== 'idle' || ['live', 'connecting', 'reconnecting', 'finishing'].includes(serverState.phase));
+    await providerPanel.load(); providerPanel.setRunning(localPhase !== 'idle' || ['live', 'connecting', 'reconnecting', 'finishing'].includes(serverState.phase));
+  }
+  workspacePanel ||= initWorkspacePanel({ api, onLogout: async () => {
+    await stopCapture({ cancel: true }); await api('/api/logout', {}); events?.close(); location.assign((workspacePrefix() || '') + '/');
+  } });
+  await workspacePanel.load();
   if (!config.liveReady) notice('Set up recognition and translation in Providers below. Voice is optional; local rehearsal is available.', true);
-  events?.close(); events = new EventSource('/api/events');
+  events?.close(); events = new EventSource(scopedUrl('/api/events'));
   events.onmessage = ({ data }) => {
     const event = JSON.parse(data); lastEventAt = Date.now();
     if (event.type === 'snapshot') recoverSnapshot(event);
@@ -164,7 +172,7 @@ function connectionEnded(ws, event, captureSession) {
   }).catch(() => {});
 }
 async function openCaptureSocket(id, settings) {
-  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/api/capture`); socket = ws; let captureSession;
+  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}${scopedUrl('/api/capture')}`); socket = ws; let captureSession;
   try {
     await new Promise((resolve, reject) => {
       let settled = false;
@@ -253,6 +261,11 @@ $('export').addEventListener('click', () => {
   const url = URL.createObjectURL(new Blob([JSON.stringify({ terms, koreanReview: 'not reviewed' }, null, 2)], { type: 'application/json' }));
   const link = document.createElement('a'); link.href = url; link.download = 'bitcoin-terminology.json'; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
-api('/api/health').then(health => { if (health.operatorAuthenticated) return openDesk(); }).catch(() => {});
+$('brand-link').href = (workspacePrefix() || '') + '/';
+if (workspacePrefix()) { $('login-kind').textContent = 'PRIVATE WORKSPACE'; $('token-label').textContent = 'Workspace access code'; $('token').placeholder = 'Enter your workspace access code'; }
+api('/api/health').then(health => {
+  if (health.workspaceSupport && !workspacePrefix()) { $('login-kind').textContent = 'ADMINISTRATOR ACCESS'; $('token-label').textContent = 'Private administrator code'; $('token').placeholder = 'Enter your private administrator code'; }
+  if (health.operatorAuthenticated) return openDesk();
+}).catch(() => {});
 const recoveryTimer = setInterval(recoverCaptions, 2500);
 window.addEventListener('pagehide', () => { clearInterval(recoveryTimer); ++attempt; cancelRetry?.(); capture?.stop(); socket?.close(); events?.close(); });

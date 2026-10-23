@@ -12,6 +12,8 @@ import { createLiveProvider } from '../src/http-provider.js';
 import { connectStreamingTranscriber } from '../src/streaming-stt.js';
 import { connectBufferedTranscriber } from '../src/buffered-stt.js';
 import { createRehearsalProvider, samples } from '../src/rehearsal.js';
+import { privateWorkspaceEnv } from '../src/workspace-access.js';
+import { workspacePath, initializeWorkspace, workspaceFetch, workspaceAdmin } from './workspaces.js';
 
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const error = (status, message) => Object.assign(Error(message), { status });
@@ -26,7 +28,16 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     let response;
-    if (url.pathname.startsWith('/api/')) {
+    const scope = workspacePath(url.pathname);
+    if (url.pathname.startsWith('/w/')) {
+      if (!scope || !env.WORKSPACE_STAGE) response = json({ error: 'Workspace not found.' }, 404);
+      else if ((scope[2] || '/').startsWith('/api/')) {
+        const headers = new Headers(request.headers); headers.delete('X-Workspace-Admin');
+        response = await env.WORKSPACE_STAGE.get(env.WORKSPACE_STAGE.idFromName(scope[1])).fetch(new Request(request, { headers }));
+      } else if (['/', '/listen'].includes(scope[2] || '/')) {
+        url.pathname = scope[2] === '/listen' ? '/listen.html' : '/index.html'; response = await env.ASSETS.fetch(new Request(url, request));
+      } else response = json({ error: 'Not found.' }, 404);
+    } else if (url.pathname.startsWith('/api/')) {
       if (!env.OPERATOR_TOKEN || !env.VIEWER_TOKEN) response = json({ error: 'Service access is not configured.' }, 503);
       else response = await env.STAGE.get(env.STAGE.idFromName(env.STAGE_INSTANCE || 'main-stage')).fetch(request);
     } else {
@@ -84,7 +95,7 @@ export class StageSession extends DurableObject {
       this.lastIssue = { stage: 'capture', message, sessionId: this.sessionId, at: Date.now() };
       try { source?.socket?.send(JSON.stringify({ type: 'issue', ...this.lastIssue })); } catch {}
     }
-    clearTimeout(source?.timer); clearTimeout(source?.startTimer); source?.bridge?.abort();
+    clearTimeout(source?.timer); clearTimeout(source?.startTimer); clearTimeout(source?.accessTimer); source?.bridge?.abort();
     try { source?.socket?.close(message ? 1011 : 1000, message ? 'Session failed' : 'Session stopped'); } catch {}
     this.pipeline.cancel(); this.phase = message ? 'error' : 'idle';
     if (message) this.broadcast({ type: 'issue', stage: 'capture', message });
@@ -113,7 +124,7 @@ export class StageSession extends DurableObject {
         if (!operator || !originOK) throw error(401, 'Operator access required');
         if (request.headers.get('Upgrade')?.toLowerCase() !== 'websocket') throw error(426, 'WebSocket required');
         if (!this.ready() || this.active || this.settings.busy) throw error(409, 'Stop the current session or configure providers');
-        const pair = new WebSocketPair(); this.capture(pair[1]);
+        const pair = new WebSocketPair(); this.capture(pair[1], request.headers.get('X-Workspace-Grant') || 'owner');
         return new Response(null, { status: 101, webSocket: pair[0] });
       }
       if (request.method === 'POST') {
@@ -124,6 +135,11 @@ export class StageSession extends DurableObject {
           return json({ ok: true }, 200, { 'Set-Cookie': `btcpp_operator=${this.env.OPERATOR_TOKEN}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${url.protocol === 'https:' ? '; Secure' : ''}` });
         }
         if (!operator) throw error(401, 'Operator access required');
+        if (url.pathname === '/api/workspaces') {
+          if (!secureProviderOrigin(url.origin)) throw error(403, 'Workspace administration requires HTTPS or loopback.');
+          return await workspaceAdmin(this, request, body);
+        }
+        if (url.pathname === '/api/logout') return json({ ok: true }, 200, { 'Set-Cookie': `btcpp_operator=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${url.protocol === 'https:' ? '; Secure' : ''}` });
         if (url.pathname.startsWith('/api/providers') && !secureProviderOrigin(request.headers.get('Origin'))) throw error(403, 'Private provider settings require HTTPS or a local loopback connection.');
         if (url.pathname === '/api/providers') {
           if (this.active) throw error(409, 'Stop the session before changing providers');
@@ -145,10 +161,10 @@ export class StageSession extends DurableObject {
         if (url.pathname === '/api/rehearsal') {
           if (this.active) throw error(409, 'Stop the current session first');
           this.target = 'ko'; this.mode = 'rehearsal'; this.phase = 'live'; this.replace(createRehearsalProvider());
-          const source = { index: 0 }; this.active = source; this.status();
+          const source = { index: 0, accessId: request.headers.get('X-Workspace-Grant') || 'owner' }; this.active = source; this.status();
           const tick = async () => {
             if (this.active !== source) return;
-            if (source.index === samples.length) { this.active = null; this.phase = 'idle'; this.status(); return; }
+            if (source.index === samples.length) { clearTimeout(source.accessTimer); this.active = null; this.phase = 'idle'; this.status(); return; }
             await this.submit(samples[source.index++][0]);
             if (this.active === source) source.timer = setTimeout(tick, 1800);
           };
@@ -158,14 +174,19 @@ export class StageSession extends DurableObject {
       }
       if (request.method !== 'GET') throw error(405, 'Method not allowed');
       if (url.pathname === '/api/health') return json({ service: 'btcpp-live-translation', mode: this.mode, phase: this.phase,
-        liveReady: this.ready(), operatorAuthenticated: operator });
+        liveReady: this.ready(), operatorAuthenticated: operator, workspaceSupport: Boolean(this.env.WORKSPACE_STAGE) });
+      if (url.pathname === '/api/workspaces') {
+        if (!operator) throw error(401, 'Operator access required');
+        return await workspaceAdmin(this, request);
+      }
       if (url.pathname === '/api/providers') {
         if (!operator) throw error(401, 'Operator access required');
         return json(this.settings.snapshot());
       }
       if (url.pathname === '/api/config') {
         if (!operator) throw error(401, 'Operator access required');
-        const viewerUrl = `${url.origin}/listen?token=${this.env.VIEWER_TOKEN}`;
+        const prefix = request.headers.get('X-Workspace-Prefix');
+        const viewerUrl = `${url.origin}${/^\/w\/[a-f0-9]{32}$/.test(prefix || '') ? prefix : ''}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
         return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null, viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
           liveReady: this.ready(), providers: providerStatus(this.config), languages,
@@ -204,9 +225,9 @@ export class StageSession extends DurableObject {
       throw error(404, 'Not found');
     } catch (e) { return json({ error: e.status ? e.message : 'Request failed' }, e.status || 500); }
   }
-  capture(socket) {
+  capture(socket, accessId = 'owner') {
     socket.accept(); socket.binaryType = 'arraybuffer';
-    const source = { socket }; this.active = source; let started = false;
+    const source = { socket, accessId }; this.active = source; let started = false;
     source.startTimer = setTimeout(() => { if (this.active === source && !started) this.halt('Capture did not start.'); }, 10000);
     socket.addEventListener('message', ({ data }) => {
       if (this.active !== source) return;
@@ -231,6 +252,7 @@ export class StageSession extends DurableObject {
             onWarning: message => { if (this.active === source) { socket.send(JSON.stringify({ type: 'warning', message })); this.broadcast({ type: 'issue', stage: 'recognition', message }); } },
             onError: message => { if (this.active === source) this.halt(message); },
             onClosed: async () => {
+              clearTimeout(source.accessTimer);
               if (this.active !== source) return; this.phase = 'finishing'; this.status();
               await this.pipeline.drain();
               if (this.active === source) { this.active = null; this.phase = 'idle'; this.status(); socket.close(); }
@@ -246,4 +268,12 @@ export class StageSession extends DurableObject {
     socket.addEventListener('error', () => { if (this.active === source) this.halt('Capture browser disconnected.'); });
   }
   async alarm() { if (this.active) this.halt('Six-hour session limit reached. Start a new session to continue.'); }
+}
+
+export class WorkspaceStage extends StageSession {
+  constructor(ctx, env) {
+    super(ctx, privateWorkspaceEnv(env, ctx.id.toString()));
+    initializeWorkspace(this, ctx, env.PROVIDER_SETTINGS_KEY);
+  }
+  fetch(request) { return workspaceFetch(this, request, forwarded => super.fetch(forwarded)); }
 }

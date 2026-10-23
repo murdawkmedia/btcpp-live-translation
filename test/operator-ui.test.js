@@ -4,11 +4,12 @@ import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
 // Run the real page handlers; only browser/media/network boundaries are fixtures.
-const code = (await readFile(new URL('../public/provider-settings.js', import.meta.url), 'utf8')).replace('export function ', 'function ') + '\n' +
+const workspace = (await readFile(new URL('../public/workspace.js', import.meta.url), 'utf8')).replaceAll('export function ', 'function ');
+const code = workspace + '\n' + (await readFile(new URL('../public/provider-settings.js', import.meta.url), 'utf8')).replace('export function ', 'function ') + '\n' +
   (await readFile(new URL('../public/app.js', import.meta.url), 'utf8'))
-  .replace("import { chooseAudio } from './capture.js';", '').replace("import { initProviderSettings } from './provider-settings.js';", '');
+  .replace("import { chooseAudio } from './capture.js';", '').replace("import { initProviderSettings } from './provider-settings.js';", '').replace("import { scopedUrl, workspacePrefix, initWorkspacePanel } from './workspace.js';", '');
 const tick = () => new Promise(resolve => setImmediate(resolve));
-async function desk({ chooser, ready = true, connectionErrorAfter = Infinity } = {}) {
+async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pathname = '/' } = {}) {
   const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000, pendingSnapshot;
   class Element {
     constructor() { this.disabled = false; this.value = ''; this.children = []; this.handlers = {}; this.dataset = {}; this.classList = { toggle() {} }; }
@@ -24,7 +25,7 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity } =
   node('source').value = 'input'; node('stop').disabled = true;
   class Socket {
     static CONNECTING = 0; static OPEN = 1; static CLOSING = 2; static CLOSED = 3;
-    constructor() { sockets.push(this); this.readyState = 0; this.bufferedAmount = 0; this.sent = []; queueMicrotask(() => { if (this.readyState !== 0) return; this.readyState = 1; this.onopen?.(); }); }
+    constructor(url) { this.url = url; sockets.push(this); this.readyState = 0; this.bufferedAmount = 0; this.sent = []; queueMicrotask(() => { if (this.readyState !== 0) return; this.readyState = 1; this.onopen?.(); }); }
     send(data) {
       this.sent.push(data);
       if (typeof data === 'string' && JSON.parse(data).type === 'start') {
@@ -43,8 +44,8 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity } =
   const config = { liveReady: true, topics: ['privacy'], languages: [{ code: 'ko', name: 'Korean', native: '한국어' }], targetLanguage: 'ko',
     providers: { recognition: 'fixture', translation: 'fixture', speech: 'fixture' }, qr: '', viewerUrl: '/listen', publicReady: true, termCount: 345, phase: 'idle', mode: 'idle', history: [] };
   const sandbox = { document: { getElementById: node, createElement: () => new Element() },
-    window: { addEventListener() {} }, location: { protocol: 'https:', host: 'fixture.invalid' },
-    WebSocket: Socket, EventSource: class { constructor() { streams.push(this); } close() {} },
+    window: { addEventListener() {} }, location: { protocol: 'https:', host: 'fixture.invalid', pathname },
+    WebSocket: Socket, EventSource: class { constructor(url) { this.url = url; streams.push(this); } close() {} },
     chooseAudio: chooser ? () => chooser(makeCapture) : async () => makeCapture(),
     fetch: async path => { const held = path === '/api/config' ? pendingSnapshot : null; if (held) pendingSnapshot = null; return { ok: true, json: async () => { if (held) { await held.promise; return held.value; } return path === '/api/health' ? { operatorAuthenticated: true } : path === '/api/config' ? config : path === '/api/terms' ? { terms: [] } : { ok: true }; } }; },
     AbortSignal, setTimeout: (fn, ms) => setTimeout(fn, ms <= 4000 ? 0 : ms), clearTimeout, setInterval: callback => { intervals.push(callback); return intervals.length; }, clearInterval() {},
@@ -215,5 +216,12 @@ test('a snapshot from the lost connection cannot restore rows after reconnect', 
   ui.sockets[0].close(1006); await until(() => ui.sockets.length === 2 && ui.node('status').textContent === 'ON AIR');
   release(); await polling;
   assert.equal(ui.node('captions').children.length, 0, 'Old responses must not repopulate a restarted caption session');
+  await ui.click('stop');
+});
+
+test('workspace capture and operator event streams use the workspace prefix', async () => {
+  const id = 'a'.repeat(32), ui = await desk({ pathname: `/w/${id}/` });
+  await ui.click('start');
+  assert.match(ui.sockets[0].url, new RegExp(`/w/${id}/api/capture$`));
   await ui.click('stop');
 });

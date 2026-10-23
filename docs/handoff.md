@@ -100,7 +100,7 @@ Fallback messages include the close code. Do not expose raw upstream exception
 text, credentials or transcript payloads through diagnostics. Attendee snapshots
 exclude the retained operator issue. No transcript journal is created.
 
-The hosted STAGE_INSTANCE selects one shared Durable Object name. Keep it stable
+The hosted STAGE_INSTANCE selects the legacy default stage Durable Object name. Keep it stable
 during a session; changing it starts fresh in-memory stage state for everyone.
 The catch-up release uses a fresh instance after runtime probes showed the prior
 instance still answered the old protocol despite uploaded-byte/version readback.
@@ -147,3 +147,28 @@ keys; it does not delete deployment secrets. No paid provider fallback is automa
 `ttsProvider=none` makes speech optional for readiness and skips synthesis queues.
 Translation model defaults follow the selected provider, avoiding Cloudflare or
 local model IDs/endpoints leaking into an external provider selection.
+
+## Hosted operator workspaces
+
+The root operator capability is administrator-only. Root GET/POST `/api/workspaces`
+lists/creates private rooms or explicitly resets owner access. It does not return
+provider keys or previously issued access codes. WorkspaceStage is a separate
+SQLite-backed Durable Object class selected by a random `/w/<id>/` route.
+
+`workspaceFetch` authenticates owner/event codes before forwarding to the stage.
+It removes public cookies and supplies only a derived internal operator token
+after authorization. Bootstrap headers are stripped at the public Worker boundary.
+Attendee tokens are unique, authorize reads only, and never grant operator APIs.
+Every browser HTTP/SSE/WebSocket/audio path retains its workspace prefix.
+
+New workspaces explicitly strip default credentials, provider endpoints, voices
+and the account AI binding, using dedicated workspace endpoint variables only
+when the administrator configures them. Per-object wrapping keys are derived
+from the existing protected master key; settings and access survive restarts.
+
+Event operators cannot manage provider keys/checks or access. Their codes expire
+in seven days and can be revoked. Revocation stops their active source. Owner
+recovery invalidates owner/invites and stops that workspace's source, preserving
+encrypted settings; it is excluded while provider settings are being saved.
+The original StageSession namespace and default attendee capability are retained.
+See docs/workspaces.md for browser setup and the exact permission boundaries.

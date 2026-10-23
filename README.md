@@ -10,7 +10,7 @@ The attendee link opens without an operator login. Phones wait until the stage
 goes live and join automatically; captions and audio clear when the session ends.
 Captions can show the translation, the live English original, or both. English
 appears when transcription produces it, before translation completes. Everyone
-receives one shared stream. The separate menu language selector supports English,
+receives one shared stream per workspace. The separate menu language selector supports English,
 Korean, Japanese, Spanish, French and Chinese; it never changes the stage target.
 Both pages use a dark theme by default. Voice still needs a tap on Listen.
 
@@ -172,3 +172,14 @@ settings use encrypted Durable Object storage and a separate Worker secret; see
 [Cloudflare setup](docs/cloudflare.md). Keep the encryption key stable and recover
 it together with encrypted settings. Missing or corrupt stored settings block live
 capture visibly rather than silently choosing a different provider.
+
+## Separate browser workspaces
+
+The hosted administrator can create private operator/event workspaces under
+**06 / Workspaces & access**. Each has its own login code, provider keys, session
+and attendee QR link. New workspaces cannot fall back to the default desk's
+API keys or Cloudflare AI allocation. Owners may explicitly grant revocable
+seven-day event access using their workspace budget. See [workspace setup and
+permissions](docs/workspaces.md). Operators and attendees use a browser; no local
+installation is needed for the hosted version. Keep the main administrator code
+private. The existing default stage and attendee link remain usable.

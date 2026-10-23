@@ -44,7 +44,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
       ELEVENLABS_API_KEY: 'eleven-fixture-only', XAI_API_KEY: 'xai-fixture-only', XAI_BASE_URL: fixture,
       STT_URL: fixture.replace('http:', 'ws:') + '/stt', OPERATOR_TOKEN: 'operator-fixture-only', VIEWER_TOKEN: 'viewer-fixture-only', STAGE_INSTANCE: 'fixture-stage', PROVIDER_SETTINGS_KEY: '12'.repeat(32) } };
   await writeFile('.runtime/worker-live-fixture.json', JSON.stringify(config));
-  let child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--inspector-port', '0', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
   let logs = ''; for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { logs = (logs + data).slice(-5000); });
   t.after(async () => { child.kill('SIGTERM'); await Promise.race([once(child, 'exit'), new Promise(resolve => setTimeout(resolve, 3000))]); });
   let ready = false;
@@ -70,7 +70,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.equal((await (await privatePost('/api/providers/test', { stage: 'speech' })).json()).ok, true);
   assert.equal(speech, 0); assert.equal(pcm, 0, 'Recognition check must not send audio');
   const exited = once(child, 'exit'); child.kill('SIGTERM'); await exited;
-  child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
+  child = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--local', '--inspector-port', '0', '--config', '.runtime/worker-live-fixture.json', '--port', String(port), '--persist-to', '.runtime/live-fixture-state'], { stdio: ['ignore', 'pipe', 'pipe'] });
   for (const stream of [child.stdout, child.stderr]) stream.on('data', data => { logs = (logs + data).slice(-5000); });
   let restored;
   for (let i = 0; i < 100; i++) {

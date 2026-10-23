@@ -14,7 +14,7 @@ import { languages, language } from './languages.js';
 
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const fail = (status, message) => Object.assign(Error(message), { status });
-const staticFiles = new Map(['index.html', 'listen.html', 'app.js', 'listen.js', 'styles.css', 'capture.js', 'pcm-worklet.js', 'audio-core.js', 'provider-settings.js'].map(name => ['/' + name, name]));
+const staticFiles = new Map(['index.html', 'listen.html', 'app.js', 'listen.js', 'styles.css', 'capture.js', 'pcm-worklet.js', 'audio-core.js', 'provider-settings.js', 'workspace.js'].map(name => ['/' + name, name]));
 const mime = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' };
 
 export function createApp(config = {}) {
@@ -94,6 +94,10 @@ export function createApp(config = {}) {
           return json(res, { ok: true });
         }
         if (!operator(req)) throw fail(401, 'Operator access required');
+        if (url.pathname === '/api/logout') {
+          res.setHeader('Set-Cookie', `btcpp_operator=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${config.publicBaseUrl?.startsWith('https:') ? '; Secure' : ''}`);
+          return json(res, { ok: true });
+        }
         if (url.pathname.startsWith('/api/providers') && !secureProviderOrigin(req.headers.origin)) throw fail(403, 'Private provider settings require HTTPS or a local loopback connection.');
         if (url.pathname === '/api/providers') {
           if (active) throw fail(409, 'Stop the session before changing providers');

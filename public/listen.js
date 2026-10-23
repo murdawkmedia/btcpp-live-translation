@@ -1,3 +1,4 @@
+import { scopedUrl } from './workspace.js';
 const $ = id => document.getElementById(id);
 const token = new URLSearchParams(location.search).get('token');
 const audio = $('audio');
@@ -113,7 +114,7 @@ async function playNext() {
   const next = queue.shift();
   if (Date.now() - next.createdAt > 20000) { notice(words().skipped, true); return playNext(); }
   const generation = audioGeneration; playing = true;
-  audio.src = `/api/audio/${next.id}?token=${encodeURIComponent(token)}&session=${encodeURIComponent(sessionId || '')}`;
+  audio.src = scopedUrl(`/api/audio/${next.id}?token=${encodeURIComponent(token)}&session=${encodeURIComponent(sessionId || '')}`);
   try { await audio.play(); }
   catch { if (generation === audioGeneration) { listening = false; playing = false; button(); notice(words().failed, true); } }
 }
@@ -127,7 +128,7 @@ async function recover() {
   if (closed || denied || polling || Date.now() - lastEventAt < 5000) return;
   polling = true; const version = revision;
   try {
-    const response = await fetch(`/api/listener?token=${encodeURIComponent(token)}`, { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+    const response = await fetch(scopedUrl(`/api/listener?token=${encodeURIComponent(token)}`), { cache: 'no-store', signal: AbortSignal.timeout(10000) });
     if (closed || version !== revision) return;
     if (response.status === 401) { denied = true; events?.close(); state({ phase: 'idle' }); return; }
     if (!response.ok) throw Error('Caption connection unavailable');
@@ -170,7 +171,7 @@ $('caption-view').addEventListener('change', () => {
 });
 emptyCaptions(); renderInterface();
 if (token) {
-  events = new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
+  events = new EventSource(scopedUrl(`/api/events?token=${encodeURIComponent(token)}`));
   events.onmessage = ({ data }) => {
     if (closed || denied) return;
     const event = JSON.parse(data); lastEventAt = Date.now(); revision++;

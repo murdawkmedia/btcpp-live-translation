@@ -18,7 +18,8 @@ npm run deploy
 ```
 
 Generate two distinct cryptographically random capabilities privately. The
-operator capability grants capture/control; the attendee capability grants only
+operator capability grants capture/control and hosted workspace administration;
+keep it private and issue separate workspace codes to teammates. The attendee capability grants only
 captions/audio. Enter the operator token on the hosted desk; share the QR link
 from that desk. Keep token values out of source, command arguments and logs.
 Set `CLOUDFLARE_ACCOUNT_ID` in the deployment environment when multiple accounts
@@ -72,3 +73,12 @@ To avoid the Workers AI allowance entirely, select external recognition and
 translation, and either disable voice or select an external voice provider too.
 An OpenRouter translation key by itself does not replace this app's transcription
 provider. Saving configuration does not upgrade Cloudflare billing or buy credits.
+
+## Workspace namespace
+
+The same Worker also exports WorkspaceStage through the WORKSPACE_STAGE binding.
+The v2-workspaces migration adds its SQLite namespace alongside the original
+StageSession. Retain the existing v1 migration and stable STAGE_INSTANCE; do not
+rename or delete the existing namespace to enable workspaces. The existing
+PROVIDER_SETTINGS_KEY is also the master for per-object derived settings keys.
+Never replace it on deployment. See [workspace operations](workspaces.md).

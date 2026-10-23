@@ -1,8 +1,9 @@
 # Cloud and local translation
 
 One repository provides a hosted conference service and a Windows/Linux local
-runner. The hosted service uses Cloudflare Workers assets plus one Durable Object
-for the stage session. The local runner retains Node 22+, browser audio capture
+runner. The hosted service uses Cloudflare Workers assets plus a Durable Object
+for each workspace stage session. The original default stage remains private to
+the administrator. The local runner retains Node 22+, browser audio capture
 and the same phone protocol. English to Korean is the initial event setting.
 The operator may select another supported target between sessions.
 
@@ -11,7 +12,7 @@ an Ollama-compatible text endpoint and an OpenAI-compatible local speech
 endpoint. Models are installed and operated separately. Missing local services
 fail visibly; they never trigger a paid cloud fallback. Cloud profiles explicitly
 select ElevenLabs/xAI recognition, OpenRouter/xAI/Workers AI translation, and
-ElevenLabs/xAI speech. Keys remain in server environment or Worker secrets.
+ElevenLabs/xAI speech. Keys remain in server environment/Worker secrets or encrypted workspace storage.
 
 The hosted operator captures desktop/tab or a selected audio input. Windows
 supports shared system audio when the browser offers it. Linux uses a shared
