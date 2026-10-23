@@ -46,7 +46,16 @@ export async function checkProvider(config, stage, { openSocket, timeoutMs = 100
       if (!audio.data.length) throw Error('Speech check failed');
     }
     return result(true, 'Provider accepted the sample request. Accuracy and sustained reliability still need a live test.');
-  } catch {
+  } catch (error) {
+    const status = /^Provider HTTP ([1-5]\d\d)$/.exec(error?.message || '');
+    if (status) {
+      const httpStatus = Number(status[1]);
+      const hint = [401, 403].includes(httpStatus) ? 'Check the API key permissions and access to the selected service or voice.'
+        : [402, 429].includes(httpStatus) ? 'Check available credits and provider usage limits.'
+        : httpStatus === 404 ? (stage === 'speech' ? 'Check the voice ID and whether this key can use that voice.' : 'Check the selected model.')
+        : 'Check the selected model, voice and provider service status.';
+      return { ...result(false, `Provider check failed (HTTP ${httpStatus}). ${hint} No raw provider details were exposed.`), httpStatus };
+    }
     return result(false, 'Provider check failed. Check the key, model, available credits and service status. No provider error details were exposed.');
   }
 }

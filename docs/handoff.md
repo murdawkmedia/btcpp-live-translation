@@ -147,6 +147,9 @@ All mutations require the operator cookie and same-origin POST. An idle/busy
 guard prevents provider changes/checks overlapping live capture. No attendee
 endpoint, event or diagnostic contains credentials. Arbitrary API base URLs
 remain server configuration, not browser-editable settings.
+Failed HTTP provider checks may return the numeric status and fixed guidance
+for permissions, credits or model/voice access. Raw response bodies and arbitrary
+upstream exception messages remain hidden.
 
 AES-GCM overrides persist before activation. Cloudflare uses the stable stage's
 `provider-settings-v1` record plus `PROVIDER_SETTINGS_KEY`; the local runner uses

@@ -34,3 +34,26 @@ test('a stalled native inference check times out without keeping settings busy f
   const result = await checkProvider({ sttProvider: 'workers-ai', runAI: () => new Promise(() => {}) }, 'recognition', { timeoutMs: 20 });
   assert.equal(result.ok, false); assert.ok(result.elapsedMs < 500);
 });
+
+
+const voiceCheckConfig = { ttsProvider: 'elevenlabs', elevenKey: 'fixture-not-a-real-key', elevenVoice: 'fixture-voice', targetLanguage: 'ko' };
+
+test('voice check reports a safe HTTP status and voice guidance without returning provider details', async t => {
+  const privateDetail = 'private-upstream-fixture-body-and-credentials';
+  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify({ detail: privateDetail }), { status: 404 }));
+  const result = await checkProvider(voiceCheckConfig, 'speech');
+  assert.equal(result.ok, false);
+  assert.equal(result.httpStatus, 404);
+  assert.match(result.message, /voice ID/i);
+  assert.equal(JSON.stringify(result).includes(privateDetail), false);
+  assert.equal(JSON.stringify(result).includes(voiceCheckConfig.elevenKey), false);
+});
+
+test('provider check never echoes arbitrary upstream exception text', async t => {
+  const privateDetail = 'Provider HTTP 404; private-upstream-fixture';
+  t.mock.method(globalThis, 'fetch', async () => { throw Error(privateDetail); });
+  const result = await checkProvider(voiceCheckConfig, 'speech');
+  assert.equal(result.ok, false);
+  assert.equal(result.httpStatus, undefined);
+  assert.equal(JSON.stringify(result).includes(privateDetail), false);
+});
