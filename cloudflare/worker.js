@@ -20,6 +20,7 @@ const error = (status, message) => Object.assign(Error(message), { status });
 const json = (value, status = 200, headers = {}) => Response.json(value, { status, headers });
 const cookieToken = request => (request.headers.get('Cookie') || '').split(';').map(x => x.trim()).find(x => x.startsWith('btcpp_operator='))?.slice(15);
 const security = {
+  'X-Translation-Runtime': 'handshake-deadline-v2',
   'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
   'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 };
