@@ -4,7 +4,7 @@ import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { WebSocketServer, WebSocket } from 'ws';
 import QRCode from 'qrcode';
-import { terms, topics, selectHints } from './glossary.js';
+import { terms, topics, selectHints, recognitionPacks } from './glossary.js';
 import { Pipeline } from './pipeline.js';
 import { createLiveProvider, connectTranscriber } from './providers.js';
 import { createRehearsalProvider, samples } from './rehearsal.js';
@@ -156,7 +156,7 @@ export function createApp(config = {}) {
       }
       if (url.pathname === '/api/terms') {
         if (!operator(req)) throw fail(401, 'Operator access required');
-        return json(res, { terms, hints: selectHints(url.searchParams.get('topic') || 'protocol'), reviewedKoreanTerms: 0 });
+        return json(res, { terms, packs: recognitionPacks, hints: selectHints(url.searchParams.get('topic') || 'protocol'), reviewedKoreanTerms: 0 });
       }
       if (url.pathname === '/api/listener') {
         if (!viewer(req, url)) throw fail(401, 'Attendee link required');

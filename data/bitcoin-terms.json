@@ -3276,6 +3276,772 @@
       "priority": 3,
       "preserve": true,
       "source": "https://github.com/utreexo/utreexo"
+    },
+    {
+      "term": "Adam Gibson",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Anmol Sharma",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Asher Pembroke",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Ben Knab",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Calvin Kim",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Dan Gould",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Danny",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "speaker",
+        "Marmot",
+        "IPF"
+      ]
+    },
+    {
+      "term": "Eric Sirion",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Fabian Jahr",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Jin",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "speaker",
+        "payer notes",
+        "keynote"
+      ]
+    },
+    {
+      "term": "Joe Miyamoto",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Justin Moeller",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "KIM CHANGHAK",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Kruw",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "m0wer",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Marek Feder",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Markus Schofnegger",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Matthew Vuk",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Minseok Song",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Naiyoma",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Nick Farrow",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "niftynei",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Oleksandr Kurbatov",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Pacman",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "speaker",
+        "workshop"
+      ]
+    },
+    {
+      "term": "Piccolo",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "speaker",
+        "judge",
+        "hackathon"
+      ]
+    },
+    {
+      "term": "Rademenez",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "sam",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "speaker",
+        "relayk.it",
+        "Nostr"
+      ]
+    },
+    {
+      "term": "Stark",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "speaker",
+        "workshop"
+      ]
+    },
+    {
+      "term": "BIP 322",
+      "category": "protocol",
+      "aliases": [
+        "BIP322",
+        "BIP-322"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0322.mediawiki"
+    },
+    {
+      "term": "HRF",
+      "category": "organizations",
+      "aliases": [
+        "Human Rights Foundation"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors"
+    },
+    {
+      "term": "NYDIG",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors"
+    },
+    {
+      "term": "Btrust",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors"
+    },
+    {
+      "term": "Stakwork",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors"
+    },
+    {
+      "term": "Soapbox",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors",
+      "requiresContext": [
+        "sponsor",
+        "sponsors",
+        "supporter",
+        "supporters",
+        "Bitcoin",
+        "Nostr"
+      ]
+    },
+    {
+      "term": "Base58",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors"
+    },
+    {
+      "term": "LX",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors",
+      "requiresContext": [
+        "sponsor",
+        "sponsors",
+        "supporter",
+        "supporters",
+        "Bitcoin",
+        "Nostr"
+      ]
+    },
+    {
+      "term": "btc++ insider edition",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul#sponsors",
+      "recognitionHints": [
+        "btc++ insider"
+      ]
+    },
+    {
+      "term": "Bitshala",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Fathomx",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Hoseki",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Payjoin Dev Kit",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Brink",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "Bitcoin",
+        "grant",
+        "grants",
+        "grantee",
+        "sponsor",
+        "sponsors",
+        "Fabian Jahr"
+      ]
+    },
+    {
+      "term": "Spiral",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers",
+      "requiresContext": [
+        "Bitcoin",
+        "grant",
+        "grants",
+        "grantee",
+        "sponsor",
+        "sponsors",
+        "Fabian Jahr"
+      ]
+    },
+    {
+      "term": "OpenSats",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "AmityAge",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Blockstream Research",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "bithumb",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://btcpp.dev/seoul/speakers"
+    },
+    {
+      "term": "Chris Guida",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=Y-BjwSQOoyg"
+    },
+    {
+      "term": "Paul Sztorc",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=Y-BjwSQOoyg"
+    },
+    {
+      "term": "Tadge Dryja",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=Y-BjwSQOoyg"
+    },
+    {
+      "term": "Peter Todd",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=Y-BjwSQOoyg"
+    },
+    {
+      "term": "Steven Roose",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=stHimwaShRU"
+    },
+    {
+      "term": "Rita Anene",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=4X1jX-xUYZ0"
+    },
+    {
+      "term": "Sonkeng Maldini",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=cRoWe8zGJKI"
+    },
+    {
+      "term": "Antoine Poinsot",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=dZapNw-N0t0"
+    },
+    {
+      "term": "Breno Brito",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=90yNM5Pt8Nw"
+    },
+    {
+      "term": "Chad Curtis",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=2mKaJRvpd8U"
+    },
+    {
+      "term": "shroominic",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.youtube.com/watch?v=OCTeBwX59zQ"
+    },
+    {
+      "term": "Andrej Karpathy",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://karpathy.ai/"
+    },
+    {
+      "term": "Andrew Ng",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.andrewng.org/"
+    },
+    {
+      "term": "DeepLearning.AI",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.andrewng.org/"
+    },
+    {
+      "term": "Fei-Fei Li",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://profiles.stanford.edu/fei-fei-li"
+    },
+    {
+      "term": "World Labs",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://profiles.stanford.edu/fei-fei-li"
+    },
+    {
+      "term": "Adam Back",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://blockstream.com/about/"
+    },
+    {
+      "term": "Blockstream",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://blockstream.com/about/"
+    },
+    {
+      "term": "Lightning Labs",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://lightning.engineering/"
+    },
+    {
+      "term": "Chaincode Labs",
+      "category": "organizations",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://chaincode.com/"
+    },
+    {
+      "term": "Anthropic",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.anthropic.com/company"
+    },
+    {
+      "term": "ElevenLabs",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://elevenlabs.io/about"
+    },
+    {
+      "term": "xAI",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://x.ai/"
+    },
+    {
+      "term": "Grok",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://x.ai/"
+    },
+    {
+      "term": "Hugging Face",
+      "category": "ai",
+      "aliases": [
+        "HuggingFace"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://huggingface.co/"
+    },
+    {
+      "term": "NVIDIA",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.nvidia.com/en-us/"
+    },
+    {
+      "term": "AMD",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.amd.com/en.html"
+    },
+    {
+      "term": "Google DeepMind",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://deepmind.google/"
+    },
+    {
+      "term": "DeepSeek",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://deepseek.com/"
+    },
+    {
+      "term": "Mistral AI",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://mistral.ai/"
+    },
+    {
+      "term": "Groq",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://groq.com/"
+    },
+    {
+      "term": "Cerebras",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.cerebras.ai/"
+    },
+    {
+      "term": "Cohere",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://cohere.com/"
+    },
+    {
+      "term": "Meta",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://ai.meta.com/",
+      "requiresContext": [
+        "Llama",
+        "Facebook",
+        "company",
+        "Zuckerberg"
+      ]
+    },
+    {
+      "term": "Sam Altman",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://openai.com/our-structure/"
+    },
+    {
+      "term": "Dario Amodei",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.anthropic.com/company/leadership"
+    },
+    {
+      "term": "Jensen Huang",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.nvidia.com/en-us/about-nvidia/board-of-directors/jensen-huang/"
+    },
+    {
+      "term": "Demis Hassabis",
+      "category": "people",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://deepmind.google/about/"
+    },
+    {
+      "term": "Microsoft",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.microsoft.com/en-us/ai"
     }
   ]
 }

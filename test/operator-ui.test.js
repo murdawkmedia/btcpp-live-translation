@@ -9,7 +9,8 @@ const code = workspace + '\n' + (await readFile(new URL('../public/provider-sett
   (await readFile(new URL('../public/app.js', import.meta.url), 'utf8'))
   .replace("import { chooseAudio } from './capture.js';", '').replace("import { initProviderSettings } from './provider-settings.js';", '').replace("import { scopedUrl, workspacePrefix, initWorkspacePanel } from './workspace.js';", '');
 const tick = () => new Promise(resolve => setImmediate(resolve));
-async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pathname = '/' } = {}) {
+async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pathname = '/',
+  topicOptions = ['privacy'], vocabulary = { terms: [] } } = {}) {
   const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000, pendingSnapshot;
   class Element {
     constructor() { this.disabled = false; this.value = ''; this.children = []; this.handlers = {}; this.dataset = {}; this.classList = { toggle() {} }; }
@@ -41,13 +42,13 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pa
       async stop() { this.stopped++; } };
     captures.push(capture); return capture;
   };
-  const config = { liveReady: true, topics: ['privacy'], languages: [{ code: 'ko', name: 'Korean', native: '한국어' }], targetLanguage: 'ko',
+  const config = { liveReady: true, topics: topicOptions, languages: [{ code: 'ko', name: 'Korean', native: '한국어' }], targetLanguage: 'ko',
     providers: { recognition: 'fixture', translation: 'fixture', speech: 'fixture' }, qr: '', viewerUrl: '/listen', publicReady: true, termCount: 345, phase: 'idle', mode: 'idle', history: [] };
   const sandbox = { document: { getElementById: node, createElement: () => new Element() },
     window: { addEventListener() {} }, location: { protocol: 'https:', host: 'fixture.invalid', pathname },
     WebSocket: Socket, EventSource: class { constructor(url) { this.url = url; streams.push(this); } close() {} },
     chooseAudio: chooser ? () => chooser(makeCapture) : async () => makeCapture(),
-    fetch: async path => { const held = path === '/api/config' ? pendingSnapshot : null; if (held) pendingSnapshot = null; return { ok: true, json: async () => { if (held) { await held.promise; return held.value; } return path === '/api/health' ? { operatorAuthenticated: true } : path === '/api/config' ? config : path === '/api/terms' ? { terms: [] } : { ok: true }; } }; },
+    fetch: async path => { const held = path === '/api/config' ? pendingSnapshot : null; if (held) pendingSnapshot = null; return { ok: true, json: async () => { if (held) { await held.promise; return held.value; } return path === '/api/health' ? { operatorAuthenticated: true } : path === '/api/config' ? config : path === '/api/terms' ? vocabulary : { ok: true }; } }; },
     AbortSignal, setTimeout: (fn, ms) => setTimeout(fn, ms <= 4000 ? 0 : ms), clearTimeout, setInterval: callback => { intervals.push(callback); return intervals.length; }, clearInterval() {},
     Date: class extends Date { static now() { return now; } }, navigator: {}, console };
   vm.runInNewContext(code, sandbox, { filename: 'app.js' });
@@ -59,6 +60,23 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pa
     emit: event => streams[0].onmessage({ data: JSON.stringify(event) }),
     disconnect: () => streams[0].onerror() };
 }
+
+test('operator can inspect the Seoul preset and sends its topic and speaker context on capture', async () => {
+  const ui = await desk({ topicOptions: ['privacy', 'people', 'organizations', 'ai', 'seoul'], vocabulary: {
+    terms: [{ term: 'CoinJoin', category: 'privacy', aliases: [] }, { term: 'Calvin Kim', category: 'people', aliases: [] }],
+    packs: { seoul: { terms: ['Calvin Kim'] } }
+  } });
+  assert.equal(ui.node('term-count').textContent, '345 TERMS / 5 TOPICS');
+  assert.ok(ui.node('topic').children.some(option => option.value === 'seoul' && option.textContent === 'Seoul main stage'));
+  ui.node('topic').value = 'seoul'; ui.node('topic').handlers.change();
+  assert.equal(ui.node('terms').children[0].textContent, 'Calvin Kim');
+  assert.equal(ui.node('terms').children[0].className, 'term topic');
+  ui.node('context').value = 'Speaker Calvin Kim, privacy in Korea';
+  await ui.click('start');
+  const start = JSON.parse(ui.sockets[0].sent.find(message => typeof message === 'string'));
+  assert.equal(start.topic, 'seoul'); assert.equal(start.context, 'Speaker Calvin Kim, privacy in Korea');
+  assert.equal(ui.node('topic').disabled, true); await ui.click('stop');
+});
 
 test('operator drafts and translation token updates do not wait for final caption completion', async () => {
   const ui = await desk(); await ui.click('start');

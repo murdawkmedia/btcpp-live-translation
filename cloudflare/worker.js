@@ -7,7 +7,7 @@ import { ProviderSettings, secureProviderOrigin } from '../src/provider-settings
 import { ProviderConnect } from '../src/provider-connect.js';
 import { checkProvider, speechCheckConfig } from '../src/provider-check.js';
 import { languages, language } from '../src/languages.js';
-import { terms, topics, selectHints } from '../src/glossary.js';
+import { terms, topics, selectHints, recognitionPacks } from '../src/glossary.js';
 import { Pipeline } from '../src/pipeline.js';
 import { createLiveProvider } from '../src/http-provider.js';
 import { connectStreamingTranscriber } from '../src/streaming-stt.js';
@@ -216,7 +216,7 @@ export class StageSession extends DurableObject {
       }
       if (url.pathname === '/api/terms') {
         if (!operator) throw error(401, 'Operator access required');
-        return json({ terms, hints: selectHints(url.searchParams.get('topic') || 'protocol'), reviewedKoreanTerms: 0 });
+        return json({ terms, packs: recognitionPacks, hints: selectHints(url.searchParams.get('topic') || 'protocol'), reviewedKoreanTerms: 0 });
       }
       if (url.pathname === '/api/listener') {
         if (!attendee) throw error(401, 'Attendee link required');

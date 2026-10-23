@@ -2,7 +2,7 @@ import { chooseAudio } from './capture.js';
 import { initProviderSettings } from './provider-settings.js';
 import { scopedUrl, workspacePrefix, initWorkspacePanel } from './workspace.js';
 const $ = id => document.getElementById(id);
-let config, terms = [], events, capture, socket, providerPanel, workspacePanel, providerBusy = false;
+let config, terms = [], packs = {}, events, capture, socket, providerPanel, workspacePanel, providerBusy = false;
 let localPhase = 'idle', localMode = 'idle', attempt = 0, serverState = { phase: 'idle', mode: 'idle' }, lastIssue = '';
 let lastEventAt = Date.now(), polling = false, cancelRetry;
 let currentDraft = null;
@@ -82,26 +82,29 @@ async function recoverCaptions() {
 }
 function renderTerms() {
   const query = $('term-search').value.toLowerCase();
+  const packed = new Set(packs[$('topic').value]?.terms || []);
+  const inTopic = term => term.category === $('topic').value || packed.has(term.term);
   const ordered = terms.filter(t => [t.term, ...t.aliases].some(s => s.toLowerCase().includes(query)))
-    .sort((a, b) => Number(b.category === $('topic').value) - Number(a.category === $('topic').value));
+    .sort((a, b) => Number(inTopic(b)) - Number(inTopic(a)));
   $('terms').replaceChildren(...ordered.slice(0, 65).map(t => {
-    const span = document.createElement('span'); span.className = `term${t.category === $('topic').value ? ' topic' : ''}`;
+    const span = document.createElement('span'); span.className = `term${inTopic(t) ? ' topic' : ''}`;
     span.textContent = t.term; span.title = `${t.category}${t.aliases.length ? ' / ' + t.aliases.join(', ') : ''}`; return span;
   }));
 }
 async function openDesk() {
   config = await api('/api/config');
   $('login').hidden = true; $('desk').hidden = false;
-  $('topic').replaceChildren(...config.topics.map(topic => { const option = document.createElement('option'); option.value = topic; option.textContent = topic.charAt(0).toUpperCase() + topic.slice(1); return option; }));
+  $('topic').replaceChildren(...config.topics.map(topic => { const option = document.createElement('option'); option.value = topic; option.textContent = topic === 'seoul' ? 'Seoul main stage' : topic === 'ai' ? 'AI' : topic.charAt(0).toUpperCase() + topic.slice(1); return option; }));
   $('target').replaceChildren(...config.languages.map(l => { const option = document.createElement('option'); option.value = l.code; option.textContent = `${l.native} / ${l.name}`; return option; }));
   $('target').value = config.targetLanguage;
   $('target-code').textContent = config.targetLanguage.toUpperCase();
   $('translation-heading').textContent = `TRANSLATION / ${config.languages.find(l => l.code === config.targetLanguage).native}`;
   $('provider-note').textContent = `${config.providers.recognition} recognition · ${config.providers.translation} translation · ${config.providers.speech} speech. Configuration presence does not verify service readiness.`;
-  $('topic').value = 'privacy'; $('term-count').textContent = `${config.termCount} TERMS / 10 TOPICS`;
+  $('topic').value = 'privacy'; $('term-count').textContent = `${config.termCount} TERMS / ${config.topics.length} TOPICS`;
   $('qr').src = config.qr; $('viewer-link').href = config.viewerUrl;
   $('public-note').textContent = config.publicReady ? 'Attendee link uses the configured public origin. Test it on a physical phone.' : 'Local rehearsal link. Phones need a reachable HTTPS address configured as PUBLIC_BASE_URL.';
-  terms = (await api('/api/terms')).terms; renderTerms(); recoverSnapshot(config);
+  const vocabulary = await api('/api/terms'); terms = vocabulary.terms; packs = vocabulary.packs || {};
+  renderTerms(); recoverSnapshot(config);
   const eventOperator = config.workspace?.role === 'operator'; $('provider-panel').hidden = eventOperator;
   if (!eventOperator) {
     providerPanel ||= initProviderSettings({ api,

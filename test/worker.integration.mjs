@@ -74,6 +74,13 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   const runtime = await (await fetch(origin + '/api/config', { headers: { Cookie: 'btcpp_operator=operator-fixture-only' } })).json();
   assert.equal(runtime.recognitionTransport, 'handshake-deadline-v2', 'The running Durable Object must identify its connection implementation');
   assert.equal(runtime.captionStreaming, 'live-drafts-v1'); assert.equal(runtime.voiceTransport, 'progressive-audio-v1');
+  assert.ok(runtime.topics.includes('seoul'));
+  assert.equal((await fetch(origin + '/api/terms')).status, 401);
+  const vocabulary = await (await fetch(origin + '/api/terms?topic=seoul', {
+    headers: { Cookie: 'btcpp_operator=operator-fixture-only' }
+  })).json();
+  assert.ok(vocabulary.packs.seoul.terms.includes('Fabian Jahr'));
+  assert.ok(vocabulary.hints.includes('NYDIG'));
   assert.equal((await fetch(origin + '/api/listener')).status, 401);
   assert.equal((await fetch(origin + '/api/listener?token=incorrect')).status, 401);
   assert.equal((await fetch(origin + '/api/config?token=viewer-fixture-only')).status, 401);

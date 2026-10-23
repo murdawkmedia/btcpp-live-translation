@@ -112,10 +112,25 @@ longer phrases. The final 0.6 seconds wait for more context. A 0.7-second pause 
 flushes the tail. This trades additional recognition work for better continuity
 around technical terms; it is not word-by-word simultaneous interpretation.
 
-The 392-entry terminology reference covers 11 Bitcoin, Lightning, ecash, Nostr,
-cryptography and AI topics. Hints favor the chosen topic and talk context, within
+The 478-entry terminology reference covers 13 Bitcoin, Lightning, ecash, Nostr,
+cryptography, AI, people and organization categories, plus a Seoul main-stage
+preset. Hints favor the chosen topic and talk context, within
 provider count/length limits. Translation sees relevant terms and two prior
 captions for context. Unreviewed glossary drafts never become mandatory rules.
+
+Choose **Seoul main stage** for its public main-stage speakers, eight sponsors/media
+partners and selected technical terms (48 references, reviewed October 23, 2026).
+The full library includes 28 unique names from the public Seoul lineup, other
+Bitcoin++ speakers and selected Bitcoin/AI organizations and researchers. Event
+affiliations are vocabulary references, not additional sponsor claims. Before
+starting, enter the current speaker, title and key names to prioritize them even
+with another topic selected. Names retain their supplied spellings in translation;
+they are never fuzzy replacements for arbitrary speech. Ambiguous words/handles
+such as Brink, Spiral, Meta and Jin need matching context in the same sentence.
+Short provider hints are explicitly authored rather than truncated names. This
+adds no model request; live recognition and native Korean name review remain
+separate from dictionary/fixture checks. Sources are recorded with each entry and
+in `data/recognition-packs.json`; refresh the preset as the agenda changes.
 
 Select the AI topic for local-model/agent talks, and put proposal numbers or model
 names in the talk context before starting. Recognition hints include BIP 54,

@@ -30,6 +30,11 @@ test('capabilities, origins, body limits and audio access are enforced', async t
   assert.equal(config.liveReady, false);
   assert.equal(config.termCount, terms.length);
   assert.ok(config.topics.includes('ai'));
+  assert.ok(config.topics.includes('seoul'));
+  assert.equal((await request('/api/terms')).status, 401);
+  const vocabulary = await (await request('/api/terms?topic=seoul', { auth: true })).json();
+  assert.ok(vocabulary.packs.seoul.terms.includes('Calvin Kim'));
+  assert.ok(vocabulary.hints.includes('NYDIG'));
 });
 
 test('provider settings require the operator and origin, save privately and lock during sessions', async t => {

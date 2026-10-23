@@ -55,11 +55,26 @@ It canonicalizes explicit BIP spacing without changing digits; only the verified
 Bit54/BIP 54 confusion gets context-gated repair. Same-sentence nearby UTXO/Utreexo or
 proposal context is required and bitfield/code/URL cases are excluded. Never guess
 proposal numbers, convert URSF to UASF, or use an extra model for spelling cleanup.
-The library has 392 entries and an AI topic; the existing provider count/length
+The library has 478 entries, including public people/organization names, and a
+Seoul main-stage preset; the existing provider count/length
 limits still apply. Recognition hints are fixed at session start, so a changed
 topic/title requires Stop and restart. No raw transcript journal is added.
 Utreexo is a separate spelling hint from UTXO; never treat these as synonyms or
 blindly replace ASR strings such as 3XO with UTXO.
+
+`recognition-packs.json` contains the bounded, dated Seoul preset, combining 18
+main-stage speaker names, eight sponsors/media partners and 22 technical terms.
+It is an explicit topic selection; generic workspaces keep the privacy default.
+The broader library includes all 28 unique public Seoul lineup names. Public
+affiliations are not a claim of sponsorship. Full names are preferred; short
+names/common-word brands use `requiresContext` anchors in the same sentence.
+No surname-only/fuzzy rewriting or invented Korean name mappings is added.
+Translation preserves recognized name spellings. Explicit `recognitionHints` are
+fallbacks only when a canonical name exceeds a provider's length limit; hints are
+deduplicated before applying the count limit. Current talk context outranks the
+preset and category. Both runtimes expose preset membership through the protected
+terminology endpoint so the operator can inspect the selected entries. Dictionary
+checks prove selection and guidance, not real acoustic accuracy or Korean review.
 
 ## Revising live drafts
 
