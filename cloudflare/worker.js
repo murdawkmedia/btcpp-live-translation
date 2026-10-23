@@ -65,9 +65,16 @@ export class StageSession extends DurableObject {
   get config() { return this.settings.config; }
   ready() { return !this.settings.problem && providerStatus(this.config).ready; }
   async openProviderSocket(url, headers) {
-    const response = await fetch(url.replace(/^ws/, 'http'), { headers: { ...headers, Upgrade: 'websocket' }, signal: AbortSignal.timeout(8000) });
-    if (!response.webSocket) { await response.body?.cancel(); throw Error('Transcription upgrade failed'); }
-    response.webSocket.accept(); return response.webSocket;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(url.replace(/^ws/, 'http'), { headers: { ...headers, Upgrade: 'websocket' }, signal: controller.signal });
+      if (!response.webSocket) { await response.body?.cancel(); throw Error('Transcription upgrade failed'); }
+      response.webSocket.accept(); return response.webSocket;
+    } finally {
+      // Aborting this fetch after an upgrade also aborts its live WebSocket.
+      clearTimeout(timer);
+    }
   }
   state() {
     return { mode: this.mode, phase: this.phase, sessionId: this.sessionId, listeners: this.subscribers.size, history: this.pipeline.history,

@@ -79,6 +79,13 @@ caption/audio stream still serves everyone. Both pages default to dark colors.
 
 ## Recognition failure recovery
 
+The Cloudflare outbound provider handshake has an eight-second deadline whose
+timer is cleared immediately after the fetch completes. Keep it separate from
+the established WebSocket lifetime: aborting that fetch after upgrade also closes
+the live provider stream. The Worker regression sends continuous duplex traffic
+past the deadline and asserts the provider connection count, since the browser
+socket may stay open while the bridge silently reconnects underneath it.
+
 A cloud recognition window gets at most two attempts, including a retry for
 missing word timestamps before overlap assembly mutates its state. Authentication
 and invalid-request failures are not retried when the provider supplies their HTTP

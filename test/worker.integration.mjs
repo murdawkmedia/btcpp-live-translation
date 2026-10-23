@@ -9,7 +9,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createRehearsalProvider } from '../src/rehearsal.js';
 
 test('Worker uses real outbound ElevenLabs-style WS and shares fixture translated audio', { timeout: 60000 }, async t => {
-  let secretHeader, hints, translations = 0, speech = 0, pcm = 0;
+  let secretHeader, hints, translations = 0, speech = 0, pcm = 0, connections = 0;
   const http = createServer(async (req, res) => {
     let body = ''; for await (const p of req) body += p;
     const input = JSON.parse(body);
@@ -20,13 +20,17 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   });
   const wss = new WebSocketServer({ server: http });
   wss.on('connection', (ws, req) => {
+    connections++;
     secretHeader = req.headers['xi-api-key']; hints = new URL(req.url, 'http://fixture').searchParams.getAll('keyterms');
     ws.send(JSON.stringify({ message_type: 'session_started' }));
+    let emitted = false;
     ws.on('message', raw => {
       const input = JSON.parse(raw); assert.equal(input.message_type, 'input_audio_chunk');
       if (input.commit) return ws.close();
       pcm += Buffer.from(input.audio_base_64, 'base64').length;
-      ws.send(JSON.stringify({ message_type: 'committed_transcript', text: 'FROST protects Bitcoin keys.' }));
+      ws.send(JSON.stringify(emitted ? { message_type: 'partial_transcript', text: '' }
+        : { message_type: 'committed_transcript', text: 'FROST protects Bitcoin keys.' }));
+      emitted = true;
     });
   });
   http.listen(0, '127.0.0.1'); await once(http, 'listening');
@@ -80,6 +84,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.equal(restored?.keys.elevenlabs.source, 'saved', 'Worker restart must restore encrypted provider credentials');
   assert.equal(restored?.ttsProvider, 'none');
   await privatePost('/api/providers', { ttsProvider: 'xai' });
+  const connectionsBeforeCapture = connections;
   const ws = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
   t.after(() => ws.terminate()); await once(ws, 'open');
   const message = once(ws, 'message'); ws.send(JSON.stringify({ type: 'start', topic: 'cryptography' }));
@@ -92,10 +97,15 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 30));
   }
   assert.equal(status.history[0]?.translated, 'FROST는 비트코인 키를 보호합니다.');
-  await new Promise(resolve => setTimeout(resolve, 8500));
+  // Keep both directions active past the handshake deadline. An idle socket alone
+  // does not detect a fetch abort whose effect appears on subsequent traffic.
+  const keepAudio = setInterval(() => { if (ws.readyState === WebSocket.OPEN) ws.send(Buffer.alloc(3200)); }, 100);
+  t.after(() => clearInterval(keepAudio));
+  await new Promise(resolve => setTimeout(resolve, 8500)); clearInterval(keepAudio);
   assert.equal(ws.readyState, WebSocket.OPEN, 'A handshake timeout must not close an established recognition socket');
   const held = await (await fetch(origin + '/api/config', { headers: { Cookie: cookie } })).json();
   assert.equal(held.phase, 'live');
+  assert.equal(connections, connectionsBeforeCapture + 1, 'Streaming traffic must keep the original provider socket past the handshake deadline');
   const listener = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
   assert.equal(listener.history[0].translated, status.history[0].translated);
   assert.notEqual(listener.sessionId, waiting.sessionId); assert.equal(listener.providers, undefined);
@@ -104,7 +114,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.equal(Buffer.from(await a.arrayBuffer()).subarray(0, 4).toString(), 'RIFF');
   assert.equal(Buffer.from(await b.arrayBuffer()).subarray(0, 4).toString(), 'RIFF');
   assert.equal(secretHeader, 'eleven-fixture-only'); assert.equal(hints.length, 50);
-  assert.equal(pcm, 3200); assert.equal(translations, 1); assert.equal(speech, 1);
+  assert.ok(pcm >= 3200 * 80); assert.equal(translations, 1); assert.equal(speech, 1);
   ws.send(JSON.stringify({ type: 'stop' }));
   for (let i = 0; i < 100; i++) {
     const value = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
