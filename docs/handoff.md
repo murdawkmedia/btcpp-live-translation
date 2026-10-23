@@ -49,6 +49,15 @@ Technical hints are short, topic/context-specific spelling references. Do not
 blindly replace ordinary words such as cash/cashew with project names. Human
 Korean review and real talk/venue tests remain required before event acceptance.
 
+Streaming recognition maps documented ElevenLabs error event types to authored
+messages, distinguishing quota, rate/session limits, audio inactivity, input and
+provider faults. Recognition checks retain those safe messages through a local
+error class; arbitrary upstream exception fields/bodies stay hidden. No raw
+provider payload is logged. Unknown/xAI errors keep the generic handling. Fatal
+errors still stop capture; no new retry or provider switch is introduced. The
+connection-only check aborts after acceptance without sending audio, so a pass
+does not establish continued quota or long-session reliability.
+
 `transcript-terms.js` applies deterministic spelling repair at the shared pipeline
 boundary for partial and final English, before translation and attendee fanout.
 It canonicalizes explicit BIP spacing without changing digits; only the verified

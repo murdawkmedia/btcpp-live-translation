@@ -51,7 +51,7 @@ test('voice check reports a safe HTTP status and voice guidance without returnin
 
 test('provider check never echoes arbitrary upstream exception text', async t => {
   const privateDetail = 'Provider HTTP 404; private-upstream-fixture';
-  t.mock.method(globalThis, 'fetch', async () => { throw Error(privateDetail); });
+  t.mock.method(globalThis, 'fetch', async () => { throw Object.assign(Error(privateDetail), { safeRecognitionIssue: privateDetail }); });
   const result = await checkProvider(voiceCheckConfig, 'speech');
   assert.equal(result.ok, false);
   assert.equal(result.httpStatus, undefined);

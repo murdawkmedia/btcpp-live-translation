@@ -2,6 +2,25 @@ import { Buffer } from 'node:buffer';
 import { selectHints } from './glossary.js';
 import { TranscriptAssembler } from './transcript.js';
 
+// Public documented codes only. Raw provider bodies can contain private speech
+// or credentials and must never be forwarded into issues, diagnostics or logs.
+const elevenFailures = new Map(Object.entries({
+  auth_error: 'Check the ElevenLabs API key and its permissions.',
+  quota_exceeded: 'Usage quota exceeded. Check available ElevenLabs credits.',
+  transcriber_error: 'The provider could not transcribe the audio. Try again.',
+  input_error: 'The provider rejected the audio format or input.',
+  invalid_request: 'The provider rejected the connection parameters.',
+  error: 'The transcription provider reported a server error. Try again.',
+  commit_throttled: 'The provider received too many commit requests.',
+  unaccepted_terms: 'Accept the Scribe terms in the ElevenLabs dashboard.',
+  rate_limited: 'The provider rate limit was reached. Wait before retrying.',
+  queue_overflow: 'The provider processing queue is full. Try again later.',
+  resource_exhausted: 'The provider is at capacity. Try again later.',
+  session_time_limit_exceeded: 'The provider session time limit was reached. Start a new session.',
+  chunk_size_exceeded: 'The provider rejected an oversized audio chunk.',
+  insufficient_audio_activity: 'The provider stopped after insufficient audio activity. Check captured audio and start again.'
+}));
+
 export function connectStreamingTranscriber(config, callbacks, openSocket) {
   const { topic, context = '', onReady, onText, onPartial, onError, onClosed, onStatus = () => {} } = callbacks;
   const eleven = config.sttProvider === 'elevenlabs';
@@ -34,6 +53,8 @@ export function connectStreamingTranscriber(config, callbacks, openSocket) {
             for (const frame of pending.splice(0)) write(frame);
             pendingBytes = 0; onStatus('live'); onReady();
           }
+          const reason = eleven && elevenFailures.get(event.message_type);
+          if (reason) return fail(`ElevenLabs transcription stopped (${event.message_type}). ${reason}`);
           if (event.type === 'error' || event.error || /error|limited|exceeded|failure/.test(event.message_type || ''))
             return fail('Transcription provider rejected the session. Check credentials and quota.');
           if (eleven) {

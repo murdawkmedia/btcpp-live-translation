@@ -4,6 +4,8 @@ import { connectStreamingTranscriber } from './streaming-stt.js';
 import { providerStatus } from './config.js';
 import { wav } from './buffered-stt.js';
 
+class RecognitionCheckFailure extends Error {}
+
 export function speechCheckConfig(config, body) {
   if (body.speechProvider === undefined) return config;
   if (body.stage !== 'speech' || body.speechProvider !== 'xai' || typeof body.voice !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(body.voice)) throw Object.assign(Error('Unsupported speech check selection.'), { status: 400 });
@@ -30,10 +32,11 @@ export async function checkProvider(config, stage, { openSocket, timeoutMs = 100
         let bridge, settled = false;
         const done = error => {
           if (settled) return; settled = true; clearTimeout(timer); bridge?.abort();
-          error ? reject(Error('Recognition check failed')) : resolve();
+          // The bridge emits authored strings, never raw provider bodies.
+          error ? reject(typeof error === 'string' ? new RecognitionCheckFailure(error) : Error('Recognition check failed')) : resolve();
         };
         const timer = setTimeout(() => done(true), timeoutMs);
-        bridge = connectStreamingTranscriber(config, { topic: 'protocol', onReady: () => done(), onText() {}, onPartial() {}, onError: () => done(true), onClosed: () => done(true) }, openSocket);
+        bridge = connectStreamingTranscriber(config, { topic: 'protocol', onReady: () => done(), onText() {}, onPartial() {}, onError: message => done(message), onClosed: () => done(true) }, openSocket);
       });
       return result(true, 'Streaming connection accepted; no audio was sent. Test live speech separately.');
     }
@@ -53,6 +56,7 @@ export async function checkProvider(config, stage, { openSocket, timeoutMs = 100
     }
     return result(true, 'Provider accepted the sample request. Accuracy and sustained reliability still need a live test.');
   } catch (error) {
+    if (error instanceof RecognitionCheckFailure) return result(false, error.message);
     const status = /^Provider HTTP ([1-5]\d\d)$/.exec(error?.message || '');
     if (status) {
       const httpStatus = Number(status[1]);

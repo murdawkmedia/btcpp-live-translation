@@ -112,6 +112,14 @@ longer phrases. The final 0.6 seconds wait for more context. A 0.7-second pause 
 flushes the tail. This trades additional recognition work for better continuity
 around technical terms; it is not word-by-word simultaneous interpretation.
 
+Documented ElevenLabs recognition failures show a safe category such as
+`quota_exceeded`, `session_time_limit_exceeded` or `insufficient_audio_activity`
+with a matching action. Provider checks use the same safe messages. Raw provider
+bodies, credentials and speech are never displayed as errors. Unknown errors
+remain generic. A connection-only recognition check sends no audio and does not
+prove sustained transcription or translation quality. Limits still require an
+operator restart or provider-account action; there is no silent paid fallback.
+
 The 478-entry terminology reference covers 13 Bitcoin, Lightning, ecash, Nostr,
 cryptography, AI, people and organization categories, plus a Seoul main-stage
 preset. Hints favor the chosen topic and talk context, within
