@@ -112,10 +112,18 @@ longer phrases. The final 0.6 seconds wait for more context. A 0.7-second pause 
 flushes the tail. This trades additional recognition work for better continuity
 around technical terms; it is not word-by-word simultaneous interpretation.
 
-The 345-entry terminology reference covers 10 Bitcoin, Lightning, ecash, Nostr
-and cryptography topics. Hints favor the chosen topic and talk context, within
+The 391-entry terminology reference covers 11 Bitcoin, Lightning, ecash, Nostr,
+cryptography and AI topics. Hints favor the chosen topic and talk context, within
 provider count/length limits. Translation sees relevant terms and two prior
 captions for context. Unreviewed glossary drafts never become mandatory rules.
+
+Select the AI topic for local-model/agent talks, and put proposal numbers or model
+names in the talk context before starting. Recognition hints include BIP 54,
+BIP 30, UASF and URSF; these last two are distinct and never interchanged.
+English drafts and finals normalize explicit BIP spellings, retaining the same
+digits. The known `Bit54` error becomes `BIP 54` only in nearby proposal/UTXO
+context, with bitfield, identifier, URL and sentence-boundary guards. Ambiguous
+numbers and unverified phrases stay unchanged. This adds no model request.
 
 ElevenLabs and xAI streaming recognition supply partial transcripts before a
 segment is committed. Local/OpenRouter/xAI translation streams answer tokens

@@ -49,6 +49,16 @@ Technical hints are short, topic/context-specific spelling references. Do not
 blindly replace ordinary words such as cash/cashew with project names. Human
 Korean review and real talk/venue tests remain required before event acceptance.
 
+`transcript-terms.js` applies deterministic spelling repair at the shared pipeline
+boundary for partial and final English, before translation and attendee fanout.
+It canonicalizes explicit BIP spacing without changing digits; only the verified
+Bit54/BIP 54 confusion gets context-gated repair. Same-sentence nearby UTXO or
+proposal context is required and bitfield/code/URL cases are excluded. Never guess
+proposal numbers, convert URSF to UASF, or use an extra model for spelling cleanup.
+The library has 391 entries and an AI topic; the existing provider count/length
+limits still apply. Recognition hints are fixed at session start, so a changed
+topic/title requires Stop and restart. No raw transcript journal is added.
+
 ## Revising live drafts
 
 `LiveDraft` receives recognizer partials and immediately broadcasts English. For

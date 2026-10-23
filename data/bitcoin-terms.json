@@ -296,7 +296,10 @@
     {
       "term": "BIP 460",
       "category": "protocol",
-      "aliases": [],
+      "aliases": [
+        "BIP460",
+        "BIP-460"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://developer.bitcoin.org/glossary.html"
@@ -699,7 +702,10 @@
     {
       "term": "BIP 32",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP32",
+        "BIP-32"
+      ],
       "priority": 3,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -707,7 +713,10 @@
     {
       "term": "BIP 39",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP39",
+        "BIP-39"
+      ],
       "priority": 3,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -715,7 +724,10 @@
     {
       "term": "BIP 84",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP84",
+        "BIP-84"
+      ],
       "priority": 3,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -723,7 +735,10 @@
     {
       "term": "BIP 174",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP174",
+        "BIP-174"
+      ],
       "priority": 3,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -731,7 +746,10 @@
     {
       "term": "BIP 340",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP340",
+        "BIP-340"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -739,7 +757,10 @@
     {
       "term": "BIP 341",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP341",
+        "BIP-341"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -747,7 +768,10 @@
     {
       "term": "BIP 352",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP352",
+        "BIP-352"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -755,7 +779,10 @@
     {
       "term": "BIP 157",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP157",
+        "BIP-157"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -763,7 +790,10 @@
     {
       "term": "BIP 158",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP158",
+        "BIP-158"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -771,7 +801,10 @@
     {
       "term": "BIP 324",
       "category": "wallets",
-      "aliases": [],
+      "aliases": [
+        "BIP324",
+        "BIP-324"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://github.com/bitcoin/bips"
@@ -1634,7 +1667,10 @@
     {
       "term": "BIP 47",
       "category": "privacy",
-      "aliases": [],
+      "aliases": [
+        "BIP47",
+        "BIP-47"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://bitcoinops.org/en/topics/"
@@ -1650,7 +1686,10 @@
     {
       "term": "BIP 78",
       "category": "privacy",
-      "aliases": [],
+      "aliases": [
+        "BIP78",
+        "BIP-78"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://bitcoinops.org/en/topics/"
@@ -1666,7 +1705,10 @@
     {
       "term": "BIP 77",
       "category": "privacy",
-      "aliases": [],
+      "aliases": [
+        "BIP77",
+        "BIP-77"
+      ],
       "priority": 1,
       "preserve": true,
       "source": "https://bitcoinops.org/en/topics/"
@@ -2784,6 +2826,446 @@
       "priority": 1,
       "preserve": false,
       "source": "https://bitcoinops.org/en/topics/"
+    },
+    {
+      "term": "BIP 8",
+      "category": "protocol",
+      "aliases": [
+        "BIP8",
+        "BIP-8"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0008.mediawiki"
+    },
+    {
+      "term": "BIP 9",
+      "category": "protocol",
+      "aliases": [
+        "BIP9",
+        "BIP-9"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0009.mediawiki"
+    },
+    {
+      "term": "BIP 30",
+      "category": "protocol",
+      "aliases": [
+        "BIP30",
+        "BIP-30"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki"
+    },
+    {
+      "term": "BIP 34",
+      "category": "protocol",
+      "aliases": [
+        "BIP34",
+        "BIP-34"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0034.mediawiki"
+    },
+    {
+      "term": "BIP 54",
+      "category": "protocol",
+      "aliases": [
+        "BIP54",
+        "BIP-54"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0054.md"
+    },
+    {
+      "term": "BIP 110",
+      "category": "protocol",
+      "aliases": [
+        "BIP110",
+        "BIP-110"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0110.mediawiki"
+    },
+    {
+      "term": "BIP 148",
+      "category": "protocol",
+      "aliases": [
+        "BIP148",
+        "BIP-148"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0148.mediawiki"
+    },
+    {
+      "term": "Consensus Cleanup",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0054.md"
+    },
+    {
+      "term": "UASF",
+      "category": "protocol",
+      "aliases": [
+        "user activated soft fork",
+        "user-activated soft fork"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0148.mediawiki"
+    },
+    {
+      "term": "URSF",
+      "category": "protocol",
+      "aliases": [
+        "user rejected soft fork",
+        "user resisted soft fork"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/supertestnet/URSF-110"
+    },
+    {
+      "term": "mandatory signaling",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://www.youtube.com/watch?v=Y-BjwSQOoyg"
+    },
+    {
+      "term": "wipeout risk",
+      "category": "protocol",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://www.youtube.com/watch?v=Y-BjwSQOoyg"
+    },
+    {
+      "term": "BIP 119",
+      "category": "transactions",
+      "aliases": [
+        "BIP119",
+        "BIP-119"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0119.mediawiki"
+    },
+    {
+      "term": "BIP 125",
+      "category": "transactions",
+      "aliases": [
+        "BIP125",
+        "BIP-125"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0125.mediawiki"
+    },
+    {
+      "term": "BIP 141",
+      "category": "transactions",
+      "aliases": [
+        "BIP141",
+        "BIP-141"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0141.mediawiki"
+    },
+    {
+      "term": "BIP 143",
+      "category": "transactions",
+      "aliases": [
+        "BIP143",
+        "BIP-143"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki"
+    },
+    {
+      "term": "BIP 300",
+      "category": "transactions",
+      "aliases": [
+        "BIP300",
+        "BIP-300"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0300.mediawiki"
+    },
+    {
+      "term": "BIP 301",
+      "category": "transactions",
+      "aliases": [
+        "BIP301",
+        "BIP-301"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0301.mediawiki"
+    },
+    {
+      "term": "BIP 342",
+      "category": "transactions",
+      "aliases": [
+        "BIP342",
+        "BIP-342"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0342.mediawiki"
+    },
+    {
+      "term": "BIP 348",
+      "category": "transactions",
+      "aliases": [
+        "BIP348",
+        "BIP-348"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0348.md"
+    },
+    {
+      "term": "OP_TEMPLATEHASH",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "OP_CHECKSIGFROMSTACK",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0348.md"
+    },
+    {
+      "term": "CSFS",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0348.md"
+    },
+    {
+      "term": "SIGHASH_ALL",
+      "category": "transactions",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips"
+    },
+    {
+      "term": "ECDH",
+      "category": "cryptography",
+      "aliases": [
+        "elliptic curve Diffie-Hellman"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/bitcoin/bips/blob/master/bip-0352.mediawiki"
+    },
+    {
+      "term": "LLM",
+      "category": "ai",
+      "aliases": [
+        "large language model"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "GPU",
+      "category": "ai",
+      "aliases": [
+        "graphics processing unit"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "VRAM",
+      "category": "ai",
+      "aliases": [
+        "video memory"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "CUDA",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "GGUF",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "llama.cpp",
+      "category": "ai",
+      "aliases": [
+        "llama cpp"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "KV cache",
+      "category": "ai",
+      "aliases": [
+        "key value cache"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "quantization",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "tokens per second",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "context window",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "inference",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://github.com/ggml-org/llama.cpp"
+    },
+    {
+      "term": "agentic engineering",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://www.youtube.com/watch?v=90yNM5Pt8Nw"
+    },
+    {
+      "term": "vibe coding",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": false,
+      "source": "https://www.youtube.com/watch?v=90yNM5Pt8Nw"
+    },
+    {
+      "term": "RTX 6000 Ada",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://www.nvidia.com/en-us/products/workstations/rtx-6000/"
+    },
+    {
+      "term": "Ollama",
+      "category": "ai",
+      "aliases": [
+        "O Lama",
+        "Olama"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/ollama/ollama"
+    },
+    {
+      "term": "OpenRouter",
+      "category": "ai",
+      "aliases": [
+        "open router"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://openrouter.ai/docs/quickstart"
+    },
+    {
+      "term": "Claude Code",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://code.claude.com/docs/en/overview"
+    },
+    {
+      "term": "MCP",
+      "category": "ai",
+      "aliases": [
+        "Model Context Protocol"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://modelcontextprotocol.io/docs/getting-started/intro"
+    },
+    {
+      "term": "Routstr",
+      "category": "ai",
+      "aliases": [
+        "Routster"
+      ],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://github.com/Routstr/routstr-core"
+    },
+    {
+      "term": "ChatGPT",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://openai.com/chatgpt/"
+    },
+    {
+      "term": "OpenAI",
+      "category": "ai",
+      "aliases": [],
+      "priority": 3,
+      "preserve": true,
+      "source": "https://openai.com/"
     }
   ]
 }

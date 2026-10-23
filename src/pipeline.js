@@ -1,6 +1,7 @@
 import { EventEmitter } from 'node:events';
 import { LiveDraft } from './live-draft.js';
 import { SharedAudio } from './shared-audio.js';
+import { normalizeTranscript } from './transcript-terms.js';
 
 export class Pipeline extends EventEmitter {
   constructor(provider, { maxQueue = 6, maxSpeechQueue = 3, maxHistory = 80, maxAudioBytes = 24 * 1024 * 1024, draftIntervalMs = 2000 } = {}) {
@@ -14,10 +15,11 @@ export class Pipeline extends EventEmitter {
     this.liveDraft = new LiveDraft(provider, { intervalMs: draftIntervalMs, previous: () => this.history.slice(-2), emit: draft => this.event({ type: 'draft', draft }) });
   }
   get draft() { return this.liveDraft.snapshot(); }
-  preview(text) { this.liveDraft.update(text); }
+  preview(text) { this.liveDraft.update(typeof text === 'string' ? normalizeTranscript(text.slice(0, 4000)) : text); }
   clearPreview() { this.liveDraft.clear(); }
   submit(text) {
     if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw Error('Invalid transcript segment');
+    text = normalizeTranscript(text);
     if (this.queue.length >= this.maxQueue) throw Error('Translation queue reached capacity; stop and restart capture.');
     const pretranslated = this.liveDraft.commit(text);
     const transcript = { id: ++this.sequence, english: text, createdAt: Date.now(), audioReady: false };

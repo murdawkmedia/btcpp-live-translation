@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createServer } from 'node:http';
 import { WebSocket, WebSocketServer } from 'ws';
+import { terms } from '../src/glossary.js';
 const { createApp } = await import('../src/server.js').catch(() => ({}));
 
 async function start(t, config = {}) {
@@ -27,7 +28,8 @@ test('capabilities, origins, body limits and audio access are enforced', async t
   assert.equal((await request('/api/events?token=incorrect')).status, 401);
   const config = await (await request('/api/config', { auth: true })).json();
   assert.equal(config.liveReady, false);
-  assert.equal(config.termCount, 345);
+  assert.equal(config.termCount, terms.length);
+  assert.ok(config.topics.includes('ai'));
 });
 
 test('provider settings require the operator and origin, save privately and lock during sessions', async t => {

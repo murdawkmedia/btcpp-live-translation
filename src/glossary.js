@@ -1,5 +1,6 @@
 import library from '../data/bitcoin-terms.json' with { type: 'json' };
 import { language } from './languages.js';
+import { normalizeTranscript } from './transcript-terms.js';
 
 export const terms = library.terms;
 export const topics = [...new Set(terms.map(t => t.category))];
@@ -8,6 +9,7 @@ const escape = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const matches = (text, value) => new RegExp(`(?<![\\p{L}\\p{N}])${escape(value)}(?![\\p{L}\\p{N}])`, 'iu').test(text);
 
 export function matchTerms(text, limit = 30) {
+  text = normalizeTranscript(text);
   return terms.filter(t => [t.term, ...t.aliases].some(value => matches(text, value))).slice(0, limit);
 }
 
