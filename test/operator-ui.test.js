@@ -60,6 +60,17 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pa
     disconnect: () => streams[0].onerror() };
 }
 
+test('operator drafts and translation token updates do not wait for final caption completion', async () => {
+  const ui = await desk(); await ui.click('start');
+  ui.emit({ type: 'draft', draft: { id: 1, english: 'New speech', translated: '새 발언', language: 'ko' } });
+  assert.equal(ui.node('draft-translated').textContent, '새 발언'); assert.equal(ui.node('live-draft').hidden, false);
+  ui.emit({ type: 'caption-draft', segment: { id: 1, english: 'Earlier', translated: '이전', provisional: true } });
+  assert.equal(ui.node('captions').children[0].children[1].textContent, '이전');
+  ui.emit({ type: 'caption', segment: { id: 1, english: 'Earlier', translated: '이전 발언', processingMs: 10 } });
+  assert.equal(ui.node('captions').children.length, 1); assert.equal(ui.node('captions').children[0].children[1].textContent, '이전 발언');
+  assert.equal(ui.node('partial').textContent, 'New speech'); await ui.click('stop');
+});
+
 test('live audio enables Stop and ON AIR without waiting for server-status SSE', async () => {
   const ui = await desk();
   await ui.click('start');

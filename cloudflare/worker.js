@@ -21,6 +21,7 @@ const json = (value, status = 200, headers = {}) => Response.json(value, { statu
 const cookieToken = request => (request.headers.get('Cookie') || '').split(';').map(x => x.trim()).find(x => x.startsWith('btcpp_operator='))?.slice(15);
 const security = {
   'X-Translation-Runtime': 'handshake-deadline-v2',
+  'X-Caption-Runtime': 'live-drafts-v1',
   'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
   'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 };
@@ -78,7 +79,8 @@ export class StageSession extends DurableObject {
     }
   }
   state() {
-    return { mode: this.mode, phase: this.phase, sessionId: this.sessionId, listeners: this.subscribers.size, history: this.pipeline.history,
+    return { mode: this.mode, phase: this.phase, sessionId: this.sessionId, listeners: this.subscribers.size, history: this.pipeline.listenerHistory(80),
+      draft: this.onAir() ? this.pipeline.draft : null,
       queue: this.pipeline.queue.length, name: this.config.eventName, stage: this.config.stageName,
       targetLanguage: this.target, direction: `English → ${language(this.target).name}` };
   }
@@ -197,7 +199,7 @@ export class StageSession extends DurableObject {
         const viewerUrl = `${url.origin}${/^\/w\/[a-f0-9]{32}$/.test(prefix || '') ? prefix : ''}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
         return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null,
-          recognitionTransport: 'handshake-deadline-v2', viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
+          recognitionTransport: 'handshake-deadline-v2', captionStreaming: 'live-drafts-v1', viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
           liveReady: this.ready(), providers: providerStatus(this.config), languages,
           topics, termCount: terms.length, publicReady: true, ttsProvider: this.config.ttsProvider });
       }
@@ -217,7 +219,7 @@ export class StageSession extends DurableObject {
         const stream = new ReadableStream({
           start: value => {
             controller = value; this.subscribers.add(controller);
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: 'snapshot', ...(operator ? { ...this.state(), history: this.pipeline.history.slice(-10) } : this.listenerState()) })}\n\n`));
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ type: 'snapshot', ...(operator ? { ...this.state(), history: this.pipeline.listenerHistory() } : this.listenerState()) })}\n\n`));
             heartbeat = setInterval(() => { try { if (controller.desiredSize <= 0) { controller.close(); cleanup(); } else controller.enqueue(new TextEncoder().encode(': heartbeat\n\n')); } catch { cleanup(); } }, 15000);
           }, cancel: cleanup
         }, { highWaterMark: 256000, size: chunk => chunk.byteLength });
@@ -255,7 +257,7 @@ export class StageSession extends DurableObject {
           void this.ctx.storage.setAlarm(Date.now() + 6 * 3600000);
           const handlers = { topic: topics.includes(message.topic) ? message.topic : 'protocol', context: String(message.context || '').slice(0, 1000),
             onReady: () => { if (this.active === source) { this.phase = 'live'; socket.send(JSON.stringify({ type: 'ready', sessionId: this.sessionId })); this.status(); } },
-            onPartial: text => { if (this.active === source) this.broadcast({ type: 'partial', text: text.slice(0, 4000) }); },
+            onPartial: text => { if (this.active === source) { this.pipeline.preview(text); this.broadcast({ type: 'partial', text: text.slice(0, 4000), sessionId: this.sessionId }); } },
             onText: text => { if (this.active === source) void this.submit(text); },
             onStatus: phase => { if (this.active === source) { this.phase = phase; this.status(); } },
             onWarning: message => { if (this.active === source) { socket.send(JSON.stringify({ type: 'warning', message })); this.broadcast({ type: 'issue', stage: 'recognition', message }); } },
@@ -263,6 +265,7 @@ export class StageSession extends DurableObject {
             onClosed: async () => {
               clearTimeout(source.accessTimer);
               if (this.active !== source) return; this.phase = 'finishing'; this.status();
+              this.pipeline.clearPreview();
               await this.pipeline.drain();
               if (this.active === source) { this.active = null; this.phase = 'idle'; this.status(); socket.close(); }
             } };

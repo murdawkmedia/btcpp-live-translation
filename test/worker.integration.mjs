@@ -10,11 +10,18 @@ import { createRehearsalProvider } from '../src/rehearsal.js';
 
 test('Worker uses real outbound ElevenLabs-style WS and shares fixture translated audio', { timeout: 60000 }, async t => {
   let secretHeader, hints, translations = 0, speech = 0, pcm = 0, connections = 0;
+  let draftMode = false, heldDraft;
   const http = createServer(async (req, res) => {
     let body = ''; for await (const p of req) body += p;
     const input = JSON.parse(body);
     if (req.url === '/chat/completions') {
       translations++; assert.match(input.messages[0].content, /Korean/);
+      if (draftMode) {
+        assert.equal(input.stream, true); assert.equal(input.reasoning_effort, 'low');
+        res.setHeader('content-type', 'text/event-stream');
+        res.write('data: ' + JSON.stringify({ choices: [{ delta: { content: '실시간' } }] }) + '\n\n');
+        heldDraft = res; return;
+      }
       res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ choices: [{ message: { content: 'FROST는 비트코인 키를 보호합니다.' } }] }));
     } else { speech++; res.setHeader('content-type', 'audio/wav'); res.end((await createRehearsalProvider().speak('')).data); }
   });
@@ -28,6 +35,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
       const input = JSON.parse(raw); assert.equal(input.message_type, 'input_audio_chunk');
       if (input.commit) return ws.close();
       pcm += Buffer.from(input.audio_base_64, 'base64').length;
+      if (draftMode) { ws.send(JSON.stringify({ message_type: 'partial_transcript', text: 'Live Bitcoin draft' })); return; }
       ws.send(JSON.stringify(emitted ? { message_type: 'partial_transcript', text: '' }
         : { message_type: 'committed_transcript', text: 'FROST protects Bitcoin keys.' }));
       emitted = true;
@@ -61,6 +69,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.equal((await fetch(origin + '/api/health')).headers.get('x-translation-runtime'), 'handshake-deadline-v2');
   const runtime = await (await fetch(origin + '/api/config', { headers: { Cookie: 'btcpp_operator=operator-fixture-only' } })).json();
   assert.equal(runtime.recognitionTransport, 'handshake-deadline-v2', 'The running Durable Object must identify its connection implementation');
+  assert.equal(runtime.captionStreaming, 'live-drafts-v1');
   assert.equal((await fetch(origin + '/api/listener')).status, 401);
   assert.equal((await fetch(origin + '/api/listener?token=incorrect')).status, 401);
   assert.equal((await fetch(origin + '/api/config?token=viewer-fixture-only')).status, 401);
@@ -154,4 +163,20 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.equal(diagnostic.lastIssue?.message, issue.message);
   const publicState = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
   assert.equal(publicState.lastIssue, undefined);
+  draftMode = true;
+  const drafting = new WebSocket(origin.replace('http:', 'ws:') + '/api/capture', { headers: { Origin: origin, Cookie: cookie } });
+  t.after(() => { heldDraft?.end(); drafting.terminate(); }); await once(drafting, 'open');
+  const draftReady = once(drafting, 'message'); drafting.send(JSON.stringify({ type: 'start' })); await draftReady; drafting.send(Buffer.alloc(3200));
+  let draftState;
+  for (let i = 0; i < 100; i++) {
+    draftState = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
+    if (draftState.draft?.translated) break;
+    await new Promise(resolve => setTimeout(resolve, 20));
+  }
+  assert.equal(draftState.draft?.english, 'Live Bitcoin draft'); assert.equal(draftState.draft?.translated, '실시간');
+  assert.deepEqual(draftState.history, []); assert.equal(heldDraft.writableEnded, false, 'Draft tokens must arrive before the upstream response finishes');
+  await privatePost('/api/stop', {});
+  heldDraft.end('data: {"choices":[{"delta":{"content":" 늦음"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n');
+  const stopped = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
+  assert.equal(stopped.draft, null); assert.deepEqual(stopped.history, []);
 });

@@ -5,21 +5,36 @@ const $ = id => document.getElementById(id);
 let config, terms = [], events, capture, socket, providerPanel, workspacePanel, providerBusy = false;
 let localPhase = 'idle', localMode = 'idle', attempt = 0, serverState = { phase: 'idle', mode: 'idle' }, lastIssue = '';
 let lastEventAt = Date.now(), polling = false, cancelRetry;
+let currentDraft = null;
 const notice = (message, warning = false) => { $('notice').textContent = message; $('notice').classList.toggle('warning', warning); };
 async function api(path, body, signal) {
   const response = await fetch(scopedUrl(path), { ...(body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), ...(signal ? { signal } : {}) });
   const value = await response.json(); if (!response.ok) throw Object.assign(Error(value.error || 'Request failed'), { status: response.status }); return value;
 }
 function renderCaption(segment) {
-  if ($('captions').querySelector(`[data-id="${Number(segment.id)}"]`)) return;
   if ($('captions').querySelector('.empty')) $('captions').replaceChildren();
-  const row = document.createElement('article'); row.className = 'caption-row'; row.dataset.id = segment.id;
-  for (const [key, cls] of [['english', 'en'], ['korean', 'ko']]) {
-    const p = document.createElement('p'); p.className = cls; p.lang = key === 'korean' ? 'ko' : 'en'; p.textContent = key === 'korean' ? (segment.translated || segment.korean) : segment[key]; if (key === 'korean') p.lang = segment.language || 'ko'; row.append(p);
+  let row = $('captions').querySelector(`[data-id="${Number(segment.id)}"]`);
+  if (!row) {
+    row = document.createElement('article'); row.className = 'caption-row'; row.dataset.id = segment.id;
+    for (const cls of ['en', 'ko']) { const p = document.createElement('p'); p.className = cls; row.append(p); }
+    $('captions').append(row);
   }
-  $('captions').append(row); while ($('captions').children.length > 40) $('captions').firstElementChild.remove();
+  row.children[0].textContent = segment.english; row.children[0].lang = 'en';
+  row.children[1].textContent = segment.failed ? 'Translation unavailable.' : segment.translated || segment.korean || 'Translating…';
+  row.children[1].lang = segment.language || config.targetLanguage || 'ko';
+  if (segment.provisional) { row.dataset.provisional = 'true'; row.dataset.status = 'Live draft · may revise'; }
+  else { delete row.dataset.provisional; delete row.dataset.status; }
+  while ($('captions').children.length > 40) $('captions').firstElementChild.remove();
   $('captions').scrollTop = $('captions').scrollHeight;
-  $('processing').textContent = `${(segment.processingMs / 1000).toFixed(1)}s PROCESSING`;
+  if (Number.isFinite(segment.processingMs)) $('processing').textContent = `${(segment.processingMs / 1000).toFixed(1)}s PROCESSING`;
+}
+function renderDraft(draft) {
+  currentDraft = draft;
+  $('live-draft').hidden = !draft?.english;
+  $('live-draft-label').textContent = 'Live draft · may revise';
+  $('partial').textContent = draft?.english || '';
+  $('draft-translated').textContent = draft?.translated || '';
+  $('draft-translated').lang = draft?.language || config?.targetLanguage || 'ko';
 }
 function renderStatus(update = {}) {
   serverState = { ...serverState, ...update };
@@ -33,6 +48,7 @@ function renderStatus(update = {}) {
   if (state.targetLanguage) { $('target').value = state.targetLanguage; $('target-code').textContent = state.targetLanguage.toUpperCase(); }
   $('status').textContent = state.phase === 'live' ? (state.mode === 'rehearsal' ? 'SAMPLE SESSION' : 'ON AIR') : state.phase.toUpperCase();
   $('status').classList.toggle('live', state.phase === 'live');
+  if (!['live', 'reconnecting', 'finishing'].includes(state.phase)) renderDraft(null);
   $('mode-label').textContent = state.mode === 'soundcheck' ? 'LOCAL SOUNDCHECK / NO TRANSLATION' : state.mode === 'live' ? 'LIVE API SESSION' : 'REHEARSAL / FIXED TEXT + TEST TONE';
   if (state.phase === 'live' && state.mode === 'rehearsal') notice('Local rehearsal: fixed sample captions and a test tone. No live transcription or Korean speech synthesis is being tested.');
   if (state.phase === 'live' && state.mode === 'live') notice('Receiving Main Stage audio. Attendees can read translated captions and enable audio.');
@@ -49,6 +65,7 @@ function renderStatus(update = {}) {
 function recoverSnapshot(state) {
   if (state.lastIssue && state.lastIssue.sessionId === state.sessionId) lastIssue = state.lastIssue.message;
   for (const segment of state.history || []) renderCaption(segment);
+  renderDraft(state.draft || null);
   const finished = localPhase === 'finishing' && ['idle', 'error'].includes(state.phase);
   if (finished) { localPhase = 'idle'; localMode = 'idle'; }
   renderStatus(state);
@@ -84,7 +101,7 @@ async function openDesk() {
   $('topic').value = 'privacy'; $('term-count').textContent = `${config.termCount} TERMS / 10 TOPICS`;
   $('qr').src = config.qr; $('viewer-link').href = config.viewerUrl;
   $('public-note').textContent = config.publicReady ? 'Attendee link uses the configured public origin. Test it on a physical phone.' : 'Local rehearsal link. Phones need a reachable HTTPS address configured as PUBLIC_BASE_URL.';
-  terms = (await api('/api/terms')).terms; renderTerms(); renderStatus(config);
+  terms = (await api('/api/terms')).terms; renderTerms(); recoverSnapshot(config);
   const eventOperator = config.workspace?.role === 'operator'; $('provider-panel').hidden = eventOperator;
   if (!eventOperator) {
     providerPanel ||= initProviderSettings({ api,
@@ -105,9 +122,11 @@ async function openDesk() {
   events.onmessage = ({ data }) => {
     const event = JSON.parse(data); lastEventAt = Date.now();
     if (event.type === 'snapshot') recoverSnapshot(event);
-    if (event.type === 'reset') { $('captions').replaceChildren(); $('partial').textContent = ''; }
-    if (event.type === 'caption') { renderCaption(event.segment); $('partial').textContent = ''; }
-    if (event.type === 'partial') $('partial').textContent = event.text;
+    if (event.type === 'reset') { serverState.sessionId = event.sessionId; $('captions').replaceChildren(); renderDraft(null); }
+    if (event.sessionId && serverState.sessionId && event.type !== 'snapshot' && event.type !== 'status' && event.sessionId !== serverState.sessionId) return;
+    if (['caption', 'caption-draft', 'transcript'].includes(event.type)) renderCaption(event.segment);
+    if (event.type === 'draft') renderDraft(event.draft);
+    if (event.type === 'partial' && event.text) renderDraft({ ...currentDraft, english: event.text });
     if (event.type === 'status') {
       if (localPhase === 'finishing' && ['idle', 'error'].includes(event.phase)) { localPhase = 'idle'; localMode = 'idle'; }
       renderStatus(event);
@@ -236,7 +255,7 @@ $('start').addEventListener('click', async () => {
     capture = selected; localPhase = 'connecting'; renderStatus(); $('input-tag').textContent = 'INPUT SELECTED';
     await openCaptureSocket(id, { topic: $('topic').value, context: $('context').value });
     if (id !== attempt) return;
-    $('captions').replaceChildren(); $('partial').textContent = ''; $('processing').textContent = 'WAITING FOR TRANSCRIPT';
+    $('captions').replaceChildren(); renderDraft(null); $('processing').textContent = 'WAITING FOR TRANSCRIPT';
     await selected.connect(buffer => {
       if (id !== attempt || localPhase === 'reconnecting') return;
       if (socket?.readyState !== WebSocket.OPEN || socket.bufferedAmount > 128000) { void stopCapture({ cancel: true }); notice('Audio upload fell behind. Capture stopped; check the network.', true); return; }

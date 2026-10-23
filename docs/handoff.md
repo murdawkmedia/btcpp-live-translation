@@ -41,12 +41,39 @@ after its first five-second window. Word timestamps select new stable words.
 The cloud translation default is Qwen3 with /no_think. Bitcoin unit tokens
 are protected and restored exactly; a missing/duplicated marker fails validation.
 One retry handles cloud provider or output failures. GPT-OSS remains an explicit
-option using Responses input/output and low reasoning effort. Only final message
-text may be published; incomplete responses and reasoning never reach listeners.
+option using Responses input/output and low reasoning effort. Only answer content may be published. Drafts are explicitly provisional; a
+successfully completed response is required for stable captions and voice.
+Reasoning/tool fields and leading think blocks never reach listeners.
 
 Technical hints are short, topic/context-specific spelling references. Do not
 blindly replace ordinary words such as cash/cashew with project names. Human
 Korean review and real talk/venue tests remain required before event acceptance.
+
+## Revising live drafts
+
+`LiveDraft` receives recognizer partials and immediately broadcasts English. For
+local/OpenRouter/xAI translation it runs one answer-streaming preview request,
+coalesces newer input and spaces starts by at least two seconds. Each utterance
+has its own generation; commit, Stop or session replacement cancels old work.
+Only exact-match fully completed drafts can promote to final text. Preview
+translation is shared across attendees but adds provider usage. Workers AI
+preview calls stay disabled to preserve its existing quota behavior.
+
+The shared SSE decoder bounds bytes/output and decodes fragmented UTF-8. Only
+`choices[0].delta.content` is visible; reasoning/tool fields are ignored. A
+successful stop reason and stream terminator are required before accepting a
+completed translation. Failed final streams clear provisional Korean and leave
+the English row with an unavailable message. Voice consumes finalized text only.
+
+`draft` events and snapshot `draft` recover the newest revising line.
+`caption-draft` updates the pending final-caption row in place; `caption` makes
+it stable. History snapshots include pending English and streamed prefixes, with
+the same existing memory and attendee limits. Off-air snapshots contain no draft.
+Older completed captions must not clear a newer utterance. Menu language and
+English/translation/both selection apply to drafts without changing the stream.
+Compatible xAI models request low reasoning effort; model/key choices stay intact.
+Both outer `X-Caption-Runtime` and operator `captionStreaming: live-drafts-v1`
+identify the caption implementation. Verify both after deployment.
 
 ## Browser capture controls
 

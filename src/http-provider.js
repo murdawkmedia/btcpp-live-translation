@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { translationInstructions, protectCurrencyUnits } from './glossary.js';
+import { readTranslationStream } from './translation-stream.js';
 
 const timeoutSignal = signal => AbortSignal.any([signal || new AbortController().signal, AbortSignal.timeout(30000)]);
 export async function bytes(response, max = 6 * 1024 * 1024) {
@@ -16,12 +17,13 @@ export async function bytes(response, max = 6 * 1024 * 1024) {
 export function createLiveProvider(config = {}) {
   const target = config.targetLanguage || 'ko';
   const base = config.base || 'https://api.x.ai/v1';
-  return { targetLanguage: target, speechEnabled: config.ttsProvider !== 'none',
-    async translate(text, signal, previous = []) {
+  return { targetLanguage: target, speechEnabled: config.ttsProvider !== 'none', draftEnabled: ['local', 'openrouter', 'xai'].includes(config.translationProvider || 'xai'),
+    async translate(text, signal, previous = [], { onDelta, draft = false } = {}) {
       const provider = config.translationProvider || 'xai';
       const guard = provider === 'workers-ai' ? protectCurrencyUnits(text) : null;
       const messages = [{ role: 'system', content: translationInstructions(text, target) + (guard?.markers.length
-        ? `\nCopy these protected Bitcoin unit tokens exactly once in the translation; never translate or remove them: ${guard.markers.join(', ')}.` : '') },
+        ? `\nCopy these protected Bitcoin unit tokens exactly once in the translation; never translate or remove them: ${guard.markers.join(', ')}.` : '')
+        + (draft ? '\nThis is an unfinished live transcript. Translate only the supplied words. Do not complete sentences or invent missing facts. Return only the translation.' : '') },
       { role: 'user', content: JSON.stringify({
         previousContextOnly: previous.map(s => ({ english: s.english, translated: s.translated || s.korean })), currentUtterance: guard?.text || text }) }];
       const attempts = provider === 'workers-ai' ? 2 : 1;
@@ -41,8 +43,12 @@ export function createLiveProvider(config = {}) {
             const response = await fetch(`${url.replace(/\/$/, '')}/chat/completions`, { method: 'POST',
               headers: { 'Content-Type': 'application/json', ...(key ? { Authorization: `Bearer ${key}` } : {}) },
               signal: timeoutSignal(signal), body: JSON.stringify({ model: config.translationModel || 'grok-4.7', messages,
-                max_tokens: 1500, temperature: 0.1, stream: false, ...(provider === 'local' ? { think: false } : {}) }) });
-            payload = JSON.parse((await bytes(response, 128000)).toString());
+                max_tokens: 1500, temperature: 0.1, stream: typeof onDelta === 'function',
+                ...(provider === 'xai' && /^grok-4\.(?:3|5|6|7)(?:-|$)/.test(config.translationModel || 'grok-4.7') ? { reasoning_effort: 'low' } : {}),
+                ...(provider === 'local' ? { think: false } : {}) }) });
+            if (response.ok && response.headers.get('content-type')?.includes('text/event-stream')) {
+              payload = { choices: [{ message: { content: await readTranslationStream(response, onDelta) } }] };
+            } else payload = JSON.parse((await bytes(response, 128000)).toString());
           }
           if (payload.status === 'incomplete' || payload.error) throw Error('Invalid translation response');
           const raw = payload.output?.filter(item => item.type === 'message')
@@ -50,7 +56,8 @@ export function createLiveProvider(config = {}) {
             || payload.response || payload.choices?.[0]?.message?.content;
           const output = typeof raw === 'string' ? raw.replace(/^\s*<think>[\s\S]*?<\/think>\s*/i, '').trim() : '';
           if (!output || output.length > 8000 || /^<think\b/i.test(output)) throw Error('Invalid translation response');
-          return guard ? guard.restore(output) : output;
+          const translated = guard ? guard.restore(output) : output;
+          onDelta?.(translated); return translated;
         } catch (error) { if (attempt + 1 === attempts || signal?.aborted) throw error; }
       }
     },

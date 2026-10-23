@@ -12,6 +12,7 @@ try { view = localStorage.getItem('btcpp-caption-view') || view; } catch {}
 if (!['translation', 'en', 'both'].includes(view)) view = 'translation';
 let listening = false, playing = false, queue = [], lastAudio = null, target = 'ko', events, timer;
 let current = { phase: 'idle', mode: 'idle', stage: 'Main Stage', targetLanguage: 'ko' }, sessionId, live = false;
+let currentDraft = null;
 let lastEventAt = 0, revision = 0, polling = false, closed = false, denied = false, audioCursor = 0, audioGeneration = 0;
 const wording = {
   en: { listen: '▶ Listen to translation', pause: 'Ⅱ Pause audio', jump: 'Jump to live', language: 'Menu language', captions: 'Captions', both: 'Both languages', original: 'English original',
@@ -48,6 +49,16 @@ const wording = {
     failed: '请再次点击收听以启用音频。', speechFailed: '音频暂时不可用，字幕仍然可用。', reconnect: '连接已中断，正在自动重新连接。', missing: '观众链接缺失或无效，请重新扫描活动二维码。' }
 };
 const words = () => wording[locale];
+const draftLabels = { en: 'Live draft · may revise', ko: '실시간 초안 · 수정될 수 있음', ja: 'ライブ字幕案 · 更新されます', es: 'Borrador en directo · puede cambiar', fr: 'Brouillon en direct · peut changer', zh: '实时草稿 · 可能修订' };
+const translationFailed = { en: 'Translation unavailable.', ko: '번역을 사용할 수 없습니다.', ja: '翻訳を利用できません。', es: 'Traducción no disponible.', fr: 'Traduction indisponible.', zh: '翻译暂不可用。' };
+function renderDraft(draft) {
+  currentDraft = draft;
+  $('live-draft').hidden = !live || !draft?.english;
+  $('live-draft-label').textContent = draftLabels[locale];
+  $('draft-translated').textContent = draft?.translated || '';
+  $('draft-translated').lang = draft?.language || target;
+  $('english-partial').textContent = draft?.english || '';
+}
 const recognitionDelay = { en: 'Recognition is catching up. Some earlier speech may be missing.', ko: '음성 인식이 지연되어 일부 내용이 누락될 수 있습니다.',
   ja: '音声認識が遅れているため、一部の発言が欠けている可能性があります。', es: 'El reconocimiento se está poniendo al día. Puede faltar parte del discurso anterior.',
   fr: 'La reconnaissance rattrape son retard. Certains propos précédents peuvent manquer.', zh: '语音识别正在追赶进度，之前的部分内容可能缺失。' };
@@ -69,10 +80,15 @@ function renderInterface() {
   $('status').textContent = live ? (current.mode === 'rehearsal' ? ui.sampleTag : ui.on) : ui.off;
   $('status').classList.toggle('live', live);
   notice(denied || !token ? ui.missing : live ? current.mode === 'rehearsal' ? ui.sample : ui.live : ui.waiting, denied || !token);
-  for (const row of $('captions').children) if (row.dataset.pending) row.children[0].textContent = ui.pending;
+  for (const row of $('captions').children) {
+    if (row.dataset.pending) row.children[0].textContent = ui.pending;
+    if (row.dataset.failed) row.children[0].textContent = translationFailed[locale];
+    if (row.dataset.provisional) row.dataset.status = draftLabels[locale];
+  }
+  renderDraft(currentDraft);
 }
 function emptyCaptions() {
-  $('captions').replaceChildren(); document.body.classList.remove('has-captions'); $('english-partial').textContent = '';
+  $('captions').replaceChildren(); document.body.classList.remove('has-captions'); renderDraft(null);
   const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = words().waiting; $('captions').append(empty);
 }
 function caption(segment) {
@@ -87,8 +103,11 @@ function caption(segment) {
     $('captions').prepend(article);
   }
   const translated = segment.translated || segment.korean;
-  if (translated) { article.children[0].textContent = translated; article.children[0].lang = segment.language || target; delete article.dataset.pending; }
+  if (segment.failed) { article.children[0].textContent = translationFailed[locale]; article.dataset.failed = 'true'; delete article.dataset.pending; }
+  else if (translated) { article.children[0].textContent = translated; article.children[0].lang = segment.language || target; delete article.dataset.pending; delete article.dataset.failed; }
   else if (!article.children[0].textContent) { article.children[0].textContent = words().pending; article.dataset.pending = 'true'; }
+  if (segment.provisional) { article.dataset.provisional = 'true'; article.dataset.status = draftLabels[locale]; }
+  else { delete article.dataset.provisional; delete article.dataset.status; }
   article.children[1].textContent = segment.english;
   while ($('captions').children.length > 10) $('captions').lastElementChild.remove();
 }
@@ -123,6 +142,7 @@ audio.onerror = () => { if (!live || !listening) return; playing = false; notice
 function snapshot(event) {
   state(event); if (!live) return;
   for (const segment of event.history || []) { caption(segment); if (segment.audioReady) acceptAudio(segment); }
+  renderDraft(event.draft || null);
 }
 async function recover() {
   if (closed || denied || polling || Date.now() - lastEventAt < 5000) return;
@@ -179,8 +199,9 @@ if (token) {
     if (event.type === 'reset') resetSession(event.sessionId);
     if (event.type === 'status') state(event);
     if (event.sessionId && event.sessionId !== sessionId) return;
-    if (event.type === 'caption' || event.type === 'transcript') { caption(event.segment); $('english-partial').textContent = ''; }
-    if (event.type === 'partial' && live) $('english-partial').textContent = event.text;
+    if (['caption', 'caption-draft', 'transcript'].includes(event.type)) caption(event.segment);
+    if (event.type === 'draft' && live) renderDraft(event.draft);
+    if (event.type === 'partial' && live && event.text) renderDraft({ ...currentDraft, english: event.text });
     if (event.type === 'audio') acceptAudio(event);
     if (event.type === 'issue' && live) notice(event.stage === 'speech' ? words().speechFailed : event.stage === 'recognition' ? recognitionDelay[locale] : words().reconnect, true);
   };

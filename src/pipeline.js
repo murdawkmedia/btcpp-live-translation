@@ -1,27 +1,35 @@
 import { EventEmitter } from 'node:events';
+import { LiveDraft } from './live-draft.js';
 
 export class Pipeline extends EventEmitter {
-  constructor(provider, { maxQueue = 6, maxSpeechQueue = 3, maxHistory = 80, maxAudioBytes = 24 * 1024 * 1024 } = {}) {
+  constructor(provider, { maxQueue = 6, maxSpeechQueue = 3, maxHistory = 80, maxAudioBytes = 24 * 1024 * 1024, draftIntervalMs = 2000 } = {}) {
     if (!Number.isInteger(maxSpeechQueue) || maxSpeechQueue < 1) throw Error('Invalid voice queue capacity');
     super(); Object.assign(this, { provider, maxQueue, maxSpeechQueue, maxHistory, maxAudioBytes });
     this.history = []; this.transcripts = []; this.audio = new Map(); this.audioBytes = 0;
     this.queue = []; this.sequence = 0; this.generation = 0; this.running = false;
     this.speechQueue = []; this.speechRunning = false;
     this.controller = new AbortController();
+    this.currentTranslation = null;
+    this.liveDraft = new LiveDraft(provider, { intervalMs: draftIntervalMs, previous: () => this.history.slice(-2), emit: draft => this.event({ type: 'draft', draft }) });
   }
+  get draft() { return this.liveDraft.snapshot(); }
+  preview(text) { this.liveDraft.update(text); }
+  clearPreview() { this.liveDraft.clear(); }
   submit(text) {
     if (typeof text !== 'string' || !text.trim() || text.length > 4000) throw Error('Invalid transcript segment');
     if (this.queue.length >= this.maxQueue) throw Error('Translation queue reached capacity; stop and restart capture.');
+    const pretranslated = this.liveDraft.commit(text);
     const transcript = { id: ++this.sequence, english: text, createdAt: Date.now(), audioReady: false };
     this.transcripts.push(transcript);
     while (this.transcripts.length > this.maxHistory) this.transcripts.shift();
     this.event({ type: 'transcript', segment: { ...transcript } });
     return new Promise(resolve => {
-      this.queue.push({ text, transcript, generation: this.generation, receivedAt: Date.now(), resolve });
+      this.queue.push({ text, transcript, pretranslated, generation: this.generation, receivedAt: Date.now(), resolve });
       this.run();
     });
   }
   cancel() {
+    this.liveDraft.clear(); this.currentTranslation = null;
     this.generation++; this.controller.abort(); this.controller = new AbortController();
     for (const item of this.queue.splice(0)) item.resolve(false);
     for (const { item } of this.speechQueue.splice(0)) item.resolve(false);
@@ -39,8 +47,14 @@ export class Pipeline extends EventEmitter {
       const signal = this.controller.signal;
       const current = () => item.generation === this.generation && !signal.aborted;
       try {
-        const translated = await this.provider.translate(item.text, signal, this.history.slice(-2));
+        let lastEmit = -Infinity;
+        const translated = item.pretranslated ?? await this.provider.translate(item.text, signal, this.history.slice(-2), { onDelta: translated => {
+          if (!current()) return;
+          this.currentTranslation = { ...item.transcript, translated, language: this.provider.targetLanguage || 'ko', provisional: true };
+          if (Date.now() - lastEmit >= 80) { lastEmit = Date.now(); this.event({ type: 'caption-draft', segment: { ...this.currentTranslation } }); }
+        } });
         if (!current()) { item.resolve(false); continue; }
+        this.currentTranslation = null;
         const language = this.provider.targetLanguage || 'ko';
         const segment = { id: item.transcript.id, english: item.text, translated, language,
           ...(language === 'ko' ? { korean: translated } : {}),
@@ -55,7 +69,11 @@ export class Pipeline extends EventEmitter {
         }
         this.speechQueue.push({ segment, item, signal }); void this.runSpeech();
       } catch {
-        if (current()) this.event({ type: 'issue', stage: 'translation', message: 'Translation failed for a segment. Check the provider and restart if this persists.' });
+        if (current()) {
+          this.currentTranslation = null; item.transcript.failed = true;
+          this.event({ type: 'caption-draft', segment: { ...item.transcript } });
+          this.event({ type: 'issue', stage: 'translation', message: 'Translation failed for a segment. Check the provider and restart if this persists.' });
+        }
         item.resolve(false);
       }
     }
@@ -96,8 +114,9 @@ export class Pipeline extends EventEmitter {
     const segment = this.history.find(s => s.id === id);
     if (segment) segment.audioReady = false;
   }
-  listenerHistory() {
+  listenerHistory(limit = 10) {
     const translated = new Map(this.history.map(segment => [segment.id, segment]));
-    return this.transcripts.slice(-10).map(segment => translated.get(segment.id) || segment);
+    if (this.currentTranslation) translated.set(this.currentTranslation.id, this.currentTranslation);
+    return this.transcripts.slice(-limit).map(segment => translated.get(segment.id) || segment);
   }
 }

@@ -40,6 +40,41 @@ async function phone(initial = {}, pathname = '/listen') {
     response: value => { status = value; }, defer: () => { let resolve; pending = new Promise(r => { resolve = r; }); return resolve; }, hide: () => windowHandlers.pagehide() };
 }
 
+test('failed translation clears provisional Korean and retains English', async () => {
+  const ui = await phone();
+  ui.emit({ type: 'caption-draft', segment: { id: 1, english: 'Bitcoin', translated: '일부', provisional: true } });
+  ui.emit({ type: 'caption-draft', segment: { id: 1, english: 'Bitcoin', failed: true } });
+  const row = ui.node('captions').children[0];
+  assert.notEqual(row.children[0].textContent, '일부'); assert.equal(row.children[1].textContent, 'Bitcoin');
+  assert.equal(row.dataset.provisional, undefined); assert.equal(row.dataset.failed, 'true');
+});
+
+test('live Korean drafts revise immediately and older final captions cannot erase newer draft text', async () => {
+  const ui = await phone(); await ui.locale('en');
+  ui.emit({ type: 'draft', draft: { id: 1, revision: 1, english: 'New speech', translated: '새 발언', language: 'ko' } });
+  assert.equal(ui.node('live-draft').hidden, false); assert.equal(ui.node('draft-translated').textContent, '새 발언');
+  assert.equal(ui.node('english-partial').textContent, 'New speech');
+  ui.emit({ type: 'caption', segment: segment('Earlier final.', 1) });
+  assert.equal(ui.node('english-partial').textContent, 'New speech');
+  ui.emit({ type: 'draft', draft: null }); assert.equal(ui.node('live-draft').hidden, true);
+});
+
+test('draft snapshots recover without SSE and off-air status clears them', async () => {
+  const ui = await phone({ draft: { id: 1, english: 'Bitcoin', translated: '비트코인', language: 'ko' } });
+  assert.equal(ui.node('draft-translated').textContent, '비트코인'); assert.equal(ui.node('live-draft').hidden, false);
+  ui.emit({ type: 'status', ...ui.snapshot, phase: 'idle' });
+  assert.equal(ui.node('live-draft').hidden, true); assert.equal(ui.node('english-partial').textContent, '');
+});
+
+test('streaming final-caption tokens update the same row until completion', async () => {
+  const ui = await phone();
+  ui.emit({ type: 'caption-draft', segment: { ...segment('비트'), provisional: true } });
+  assert.equal(ui.node('captions').children[0].children[0].textContent, '비트');
+  assert.equal(ui.node('captions').children[0].dataset.provisional, 'true');
+  ui.emit({ type: 'caption', segment: segment('비트코인입니다.') });
+  assert.equal(ui.node('captions').children.length, 1); assert.equal(ui.node('captions').children[0].dataset.provisional, undefined);
+});
+
 test('a fresh attendee opens captions without login or a working event stream', async () => {
   const ui = await phone();
   assert.equal(ui.node('status').textContent, 'LIVE');

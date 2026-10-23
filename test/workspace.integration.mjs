@@ -11,7 +11,9 @@ test('two hosted workspaces isolate keys, operators, captions and spending autho
   let heardKey = '', calls = 0;
   const fake = createServer(async (req, res) => { req.resume(); calls++; res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ choices: [{ message: { content: '비트코인.' } }] })); });
   const fakeWs = new WebSocketServer({ server: fake });
-  fakeWs.on('connection', ws => { ws.send(JSON.stringify({ message_type: 'session_started' })); ws.on('message', () => ws.send(JSON.stringify({ message_type: 'committed_transcript', text: 'Bitcoin.' }))); });
+  fakeWs.on('connection', ws => { let first = true; ws.send(JSON.stringify({ message_type: 'session_started' })); ws.on('message', () => {
+    ws.send(JSON.stringify({ message_type: first ? 'partial_transcript' : 'committed_transcript', text: 'Bitcoin.' })); first = false;
+  }); });
   fake.on('upgrade', req => { heardKey = req.headers['xi-api-key']; });
   fake.listen(0, '127.0.0.1'); await once(fake, 'listening'); t.after(() => { for (const ws of fakeWs.clients) ws.terminate(); fakeWs.close(); fake.closeAllConnections(); fake.close(); });
   const reserve = createServer(); reserve.listen(0, '127.0.0.1'); await once(reserve, 'listening'); const port = reserve.address().port; await new Promise(r => reserve.close(r));
@@ -59,6 +61,11 @@ test('two hosted workspaces isolate keys, operators, captions and spending autho
   assert.equal((await request(path(a, '/api/settings'), ownerA, { targetLanguage: 'fr' }, 'https://other.invalid')).status, 403);
   const ws = new WebSocket(origin.replace('http:', 'ws:') + path(a, '/api/capture'), { headers: { Cookie: eventOperator, Origin: origin } }); t.after(() => ws.terminate()); await once(ws, 'open');
   const opened = once(ws, 'message'); ws.send(JSON.stringify({ type: 'start' })); assert.match((await opened)[0].toString(), /ready/);
+  ws.send(Buffer.alloc(3200));
+  let draft;
+  for (let i = 0; i < 100; i++) { draft = await (await request(path(a, '/api/listener') + viewA.search)).json(); if (draft.draft?.translated) break; await new Promise(r => setTimeout(r, 20)); }
+  assert.equal(draft.draft?.english, 'Bitcoin.'); assert.equal(draft.draft?.translated, '비트코인.');
+  assert.equal((await (await request(path(b, '/api/listener') + viewB.search)).json()).draft, null, 'Live drafts cannot cross workspace boundaries');
   ws.send(Buffer.alloc(3200));
   let live;
   for (let i = 0; i < 100; i++) { live = await (await request(path(a, '/api/listener') + viewA.search)).json(); if (live.history?.some(v => v.translated)) break; await new Promise(r => setTimeout(r, 20)); }

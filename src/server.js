@@ -34,7 +34,8 @@ export function createApp(config = {}) {
     } catch { return false; }
   };
   const json = (res, value, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
-  const state = () => ({ mode, phase, sessionId, listeners: subscribers.size, history: pipeline?.history || [],
+  const state = () => ({ mode, phase, sessionId, listeners: subscribers.size, history: pipeline?.listenerHistory(80) || [],
+    draft: onAir() ? pipeline?.draft : null,
     queue: pipeline?.queue.length || 0, name: config.eventName || 'Bitcoin++', stage: config.stageName || 'Main Stage',
     targetLanguage, direction: `English → ${language(targetLanguage).name}` });
   const onAir = () => ['live', 'reconnecting', 'finishing'].includes(phase);
@@ -140,7 +141,7 @@ export function createApp(config = {}) {
         if (!operator(req)) throw fail(401, 'Operator access required');
         const origin = config.publicBaseUrl || `http://${server.address().address === '::1' ? '[::1]' : 'localhost'}:${server.address().port}`;
         const viewerUrl = `${origin.replace(/\/$/, '')}/listen?token=${viewerToken}`;
-        return json(res, { ...state(), lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady: ready(), topics, languages, providers: providerStatus(config), termCount: terms.length,
+        return json(res, { ...state(), captionStreaming: 'live-drafts-v1', lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady: ready(), topics, languages, providers: providerStatus(config), termCount: terms.length,
           ttsProvider: config.ttsProvider || 'xai', publicReady: Boolean(config.publicBaseUrl), viewerUrl,
           qr: await QRCode.toDataURL(viewerUrl, { width: 200, margin: 1 }) });
       }
@@ -158,7 +159,7 @@ export function createApp(config = {}) {
         res.writeHead(200, { 'Content-Type': 'text/event-stream', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
         subscribers.add(res);
         res.on('error', () => subscribers.delete(res));
-        res.write(`data: ${JSON.stringify({ type: 'snapshot', ...(operator(req) ? { ...state(), history: pipeline.history.slice(-10) } : listenerState()) })}\n\n`);
+        res.write(`data: ${JSON.stringify({ type: 'snapshot', ...(operator(req) ? { ...state(), history: pipeline.listenerHistory() } : listenerState()) })}\n\n`);
         const heartbeat = setInterval(() => res.write(': heartbeat\n\n'), 15000);
         req.on('close', () => { clearInterval(heartbeat); subscribers.delete(res); }); return;
       }
@@ -209,7 +210,7 @@ export function createApp(config = {}) {
           source.bridge = connectTranscriber(config, { topic: topics.includes(message.topic) ? message.topic : 'protocol',
             context: String(message.context || '').slice(0, 1000),
             onReady: () => { if (active === source) { phase = 'live'; socket.send(JSON.stringify({ type: 'ready', sessionId })); status(); } },
-            onPartial: text => { if (active === source) broadcast({ type: 'partial', text: text.slice(0, 4000) }); },
+            onPartial: text => { if (active === source) { pipeline.preview(text); broadcast({ type: 'partial', text: text.slice(0, 4000), sessionId }); } },
             onText: text => { if (active === source) submit(text); },
             onStatus: value => { if (active === source) { phase = value; status(); } },
             onWarning: message => { if (active === source) { socket.send(JSON.stringify({ type: 'warning', message })); broadcast({ type: 'issue', stage: 'recognition', message }); } },
@@ -217,6 +218,7 @@ export function createApp(config = {}) {
             onClosed: async () => {
               if (active !== source) return;
               phase = 'finishing'; status();
+              pipeline.clearPreview();
               await pipeline.drain();
               if (active === source) { active = null; phase = 'idle'; status(); socket.close(); }
             } });

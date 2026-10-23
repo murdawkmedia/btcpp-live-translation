@@ -9,7 +9,9 @@ One target language is broadcast per session; stop before changing it.
 The attendee link opens without an operator login. Phones wait until the stage
 goes live and join automatically; captions and audio clear when the session ends.
 Captions can show the translation, the live English original, or both. English
-appears when transcription produces it, before translation completes. Everyone
+appears as soon as the recognizer sends a partial transcript. A labelled **Live
+draft** revises the newest translated line as more speech arrives. Completed
+captions stay stable; voice uses only completed translations. Everyone
 receives one shared stream per workspace. The separate menu language selector supports English,
 Korean, Japanese, Spanish, French and Chinese; it never changes the stage target.
 Both pages use a dark theme by default. Voice still needs a tap on Listen.
@@ -108,6 +110,22 @@ The 345-entry terminology reference covers 10 Bitcoin, Lightning, ecash, Nostr
 and cryptography topics. Hints favor the chosen topic and talk context, within
 provider count/length limits. Translation sees relevant terms and two prior
 captions for context. Unreviewed glossary drafts never become mandatory rules.
+
+ElevenLabs and xAI streaming recognition supply partial transcripts before a
+segment is committed. Local/OpenRouter/xAI translation streams answer tokens
+into a revising draft, with one preview request active and starts at least two
+seconds apart. New partials coalesce into the latest pending input; obsolete
+utterances are cancelled. These extra preview requests use the configured
+translation provider's credits, once per workspace rather than per attendee.
+Workers AI does not make extra preview calls; its recognition and completed
+translation keep the existing bounded-window behavior.
+
+Final translations also stream while being generated, then become stable on
+successful completion. Incomplete or failed answers never become final captions
+or voice. Compatible xAI models use low reasoning effort for translation. A
+completed draft with exactly matching English can be reused at recognition
+commit. Streaming reduces app-side waiting; network, recognition and model
+latency still apply. English and Korean word order also means drafts can change.
 
 Translation and synthesis happen once per stage/target, shared by listeners.
 The hosted default uses Whisper large v3 turbo, Qwen3 with /no_think for
