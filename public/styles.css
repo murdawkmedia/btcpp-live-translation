@@ -25,3 +25,7 @@ label{color:var(--muted)}input,select{background:var(--panel);border-color:var(-
 .listener.english-only .live-draft .ko { display: none; }
 [data-provisional]::before { content: attr(data-status); display: block; grid-column: 1 / -1; margin-bottom: 6px; }
 @media (max-width: 600px) { .draft-columns { grid-template-columns: 1fr; gap: 10px; } }
+
+footer { flex-wrap: wrap; gap: 12px; }
+.source-link { color: var(--muted, #b0b9ad); font-size: 12px; text-underline-offset: 3px; overflow-wrap: anywhere; }
+#connect-openrouter { margin: 0 0 6px; width: 100%; }

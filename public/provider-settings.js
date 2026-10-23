@@ -2,8 +2,17 @@ export function initProviderSettings({ api, onChange, onBusy }) {
   const node = id => document.getElementById(id), names = ['elevenlabs', 'openrouter', 'xai'];
   const fields = { sttProvider: 'provider-stt', translationProvider: 'provider-translation', ttsProvider: 'provider-speech', translationModel: 'provider-model', elevenVoice: 'provider-eleven-voice', voice: 'provider-xai-voice' };
   const labels = { local: 'Local model', 'workers-ai': 'Cloudflare AI', elevenlabs: 'ElevenLabs', openrouter: 'OpenRouter', xai: 'xAI / Grok', none: 'Off · captions only' };
-  const controls = [...Object.values(fields), ...names.flatMap(name => [`key-${name}`, `clear-${name}`]), 'provider-save', 'test-recognition', 'test-translation', 'test-speech'];
+  const controls = [...Object.values(fields), ...names.flatMap(name => [`key-${name}`, `clear-${name}`]), 'connect-openrouter', 'provider-save', 'test-recognition', 'test-translation', 'test-speech'];
   let state, running = false, pending = false;
+  let callback;
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.has('code') || url.searchParams.has('error')) {
+      callback = { code: url.searchParams.get('code'), state: url.searchParams.get('state'), denied: url.searchParams.has('error') };
+      for (const key of ['code', 'state', 'error', 'error_description']) url.searchParams.delete(key);
+      history.replaceState(null, '', url.pathname + url.search + url.hash);
+    }
+  } catch {}
   const message = text => { node('provider-message').textContent = text; };
   function lock() { for (const id of controls) node(id).disabled = running || pending || !state?.available; }
   function extras() {
@@ -43,6 +52,13 @@ export function initProviderSettings({ api, onChange, onBusy }) {
   });
   node('provider-translation').addEventListener('change', () => { node('provider-model').value = state?.models[node('provider-translation').value] || ''; });
   node('provider-speech').addEventListener('change', extras);
+  node('connect-openrouter').addEventListener('click', () => busy(async () => {
+    message('Opening OpenRouter. Authorize a key using your own credits.');
+    const result = await api('/api/providers/connect/openrouter', { action: 'begin' }, AbortSignal.timeout(15000));
+    const url = new URL(result.url);
+    if (url.origin !== 'https://openrouter.ai' || url.pathname !== '/auth') throw Error('Provider connection unavailable.');
+    location.assign(url.href);
+  }));
   for (const stage of ['recognition', 'translation', 'speech']) node(`test-${stage}`).addEventListener('click', () => busy(async () => {
     message(`Checking saved ${stage} settings…`);
     const result = await api('/api/providers/test', { stage }, AbortSignal.timeout(35000));
@@ -53,6 +69,15 @@ export function initProviderSettings({ api, onChange, onBusy }) {
     async load() {
       try { render(await api('/api/providers')); }
       catch { message('Provider settings could not be loaded. Refresh the desk to retry.'); }
+      if (callback) {
+        const value = callback; callback = null;
+        if (value.denied || !value.code || !value.state) message('OpenRouter connection cancelled. Existing keys are unchanged.');
+        else await busy(async () => {
+          const saved = await api('/api/providers/connect/openrouter', { action: 'finish', code: value.code, state: value.state }, AbortSignal.timeout(20000));
+          render(saved); await onChange(saved);
+          message('Connected OpenRouter privately. Select it for translation when ready; its usage uses your OpenRouter credits.');
+        });
+      }
     },
     setRunning(value) { running = value; lock(); }
   };

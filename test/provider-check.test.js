@@ -57,3 +57,14 @@ test('provider check never echoes arbitrary upstream exception text', async t =>
   assert.equal(result.httpStatus, undefined);
   assert.equal(JSON.stringify(result).includes(privateDetail), false);
 });
+
+test('speech checks measure first audio bytes and can test xAI without saving a provider switch', async t => {
+ const { speechCheckConfig } = await import('../src/provider-check.js');
+ assert.equal(typeof speechCheckConfig, 'function');
+ const original = { ttsProvider: 'elevenlabs', elevenKey: 'fixture-eleven', elevenVoice: 'fixture-voice', xaiKey: 'fixture-xai', targetLanguage: 'ko' };
+ const selected = speechCheckConfig(original, { stage: 'speech', speechProvider: 'xai', voice: 'rex' });
+ assert.equal(original.ttsProvider, 'elevenlabs'); assert.equal(selected.ttsProvider, 'xai'); assert.equal(selected.voice, 'rex');
+ assert.throws(() => speechCheckConfig(original, { stage: 'translation', speechProvider: 'xai' }));
+ t.mock.method(globalThis, 'fetch', async () => new Response(new Uint8Array([1,2,3]), { headers: { 'Content-Type': 'audio/mpeg' } }));
+ const result = await checkProvider(selected, 'speech'); assert.equal(result.ok, true); assert.equal(typeof result.firstAudioMs, 'number');
+});

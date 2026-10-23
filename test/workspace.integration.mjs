@@ -55,6 +55,11 @@ test('two hosted workspaces isolate keys, operators, captions and spending autho
   assert.equal((await request(path(a, '/api/workspace/invites'), ownerA, { action: 'create' })).status, 400);
   const invite = await (await request(path(a, '/api/workspace/invites'), ownerA, { action: 'create', allowBudget: true })).json(); const eventOperator = await login(a, invite.code);
   assert.equal((await request(path(a, '/api/providers'), eventOperator, { ttsProvider: 'xai' })).status, 403);
+  assert.equal((await request(path(a, '/api/providers/connect/openrouter'), eventOperator, { action: 'begin' })).status, 403);
+  const connection = await (await request(path(a, '/api/providers/connect/openrouter'), ownerA, { action: 'begin' })).json();
+  const authorization = new URL(connection.url); assert.equal(new URL(authorization.searchParams.get('callback_url')).pathname, path(a, '/'));
+  const connectionState = authorization.searchParams.get('state');
+  assert.equal((await request(path(b, '/api/providers/connect/openrouter'), ownerB, { action: 'finish', state: connectionState, code: 'fixture-code' })).status, 400);
   assert.equal((await request(path(a, '/api/workspace/invites'), eventOperator, { action: 'create' })).status, 403);
   assert.equal((await request(path(a, '/api/workspaces'), ownerA, { name: 'Escalate' })).status, 403);
   assert.equal((await request(path(a, '/api/workspace/bootstrap'), ownerA, { name: 'Forged', ownerCode: a.code })).status, 404);
@@ -75,6 +80,7 @@ test('two hosted workspaces isolate keys, operators, captions and spending autho
   assert.equal((await request(path(a, '/api/config'), eventOperator)).status, 401);
   const recovered = await (await request('/api/workspaces', admin, { action: 'recover', id: a.id })).json();
   assert.equal((await request(path(a, '/api/config'), ownerA)).status, 401); const newOwner = await login(a, recovered.code);
+  assert.equal((await request(path(a, '/api/providers/connect/openrouter'), newOwner, { action: 'finish', state: connectionState, code: 'fixture-code' })).status, 400, 'Owner recovery invalidates an old owner connection');
   assert.equal((await (await request(path(a, '/api/providers'), newOwner)).json()).keys.elevenlabs.configured, true);
   assert.equal((await request('/api/listener?token=legacy-viewer-fixture')).status, 200);
   const catalog = await (await request('/api/workspaces', admin)).text(); assert.equal(catalog.includes(a.code), false); assert.equal(catalog.includes(invite.code), false);

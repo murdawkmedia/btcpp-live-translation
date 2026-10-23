@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { Readable } from 'node:stream';
 import { randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -9,18 +10,20 @@ import { createLiveProvider, connectTranscriber } from './providers.js';
 import { createRehearsalProvider, samples } from './rehearsal.js';
 import { providerStatus } from './config.js';
 import { ProviderSettings, secureProviderOrigin } from './provider-settings.js';
-import { checkProvider } from './provider-check.js';
+import { ProviderConnect } from './provider-connect.js';
+import { checkProvider, speechCheckConfig } from './provider-check.js';
 import { languages, language } from './languages.js';
 
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && Buffer.byteLength(a) === Buffer.byteLength(b) && timingSafeEqual(Buffer.from(a), Buffer.from(b));
 const fail = (status, message) => Object.assign(Error(message), { status });
-const staticFiles = new Map(['index.html', 'listen.html', 'app.js', 'listen.js', 'styles.css', 'capture.js', 'pcm-worklet.js', 'audio-core.js', 'provider-settings.js', 'workspace.js'].map(name => ['/' + name, name]));
+const staticFiles = new Map(['index.html', 'listen.html', 'app.js', 'listen.js', 'styles.css', 'capture.js', 'pcm-worklet.js', 'audio-core.js', 'provider-settings.js', 'workspace.js', 'voice-playback.js'].map(name => ['/' + name, name]));
 const mime = { html: 'text/html; charset=utf-8', js: 'text/javascript; charset=utf-8', css: 'text/css; charset=utf-8' };
 
 export function createApp(config = {}) {
   const operatorToken = config.operatorToken || randomBytes(32).toString('hex');
   const viewerToken = config.viewerToken || randomBytes(24).toString('hex');
   const settings = new ProviderSettings(config, { storage: config.settingsStorage, key: config.settingsKey });
+  const connect = new ProviderConnect(settings);
   const ready = () => !settings.problem && providerStatus(settings.config).ready;
   let targetLanguage = config.targetLanguage || 'ko';
   const subscribers = new Set();
@@ -100,13 +103,19 @@ export function createApp(config = {}) {
           return json(res, { ok: true });
         }
         if (url.pathname.startsWith('/api/providers') && !secureProviderOrigin(req.headers.origin)) throw fail(403, 'Private provider settings require HTTPS or a local loopback connection.');
+        if (url.pathname === '/api/providers/connect/openrouter') {
+          if (active) throw fail(409, 'Stop the session before connecting a provider');
+          if (body.action === 'begin') return json(res, await connect.begin(new URL('/', req.headers.origin).href, operatorToken));
+          if (body.action === 'finish') return json(res, await connect.finish(body, operatorToken));
+          throw fail(400, 'Unsupported connection action');
+        }
         if (url.pathname === '/api/providers') {
           if (active) throw fail(409, 'Stop the session before changing providers');
           return json(res, await settings.update(body));
         }
         if (url.pathname === '/api/providers/test') {
           if (active) throw fail(409, 'Stop the session before testing providers');
-          return json(res, await settings.withLock(() => checkProvider({ ...settings.config, targetLanguage }, body.stage, {
+          return json(res, await settings.withLock(() => checkProvider(speechCheckConfig({ ...settings.config, targetLanguage }, body), body.stage, {
             openSocket: (url, headers) => new WebSocket(url, { headers, handshakeTimeout: 8000, maxPayload: 512000 })
           })));
         }
@@ -141,7 +150,7 @@ export function createApp(config = {}) {
         if (!operator(req)) throw fail(401, 'Operator access required');
         const origin = config.publicBaseUrl || `http://${server.address().address === '::1' ? '[::1]' : 'localhost'}:${server.address().port}`;
         const viewerUrl = `${origin.replace(/\/$/, '')}/listen?token=${viewerToken}`;
-        return json(res, { ...state(), captionStreaming: 'live-drafts-v1', lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady: ready(), topics, languages, providers: providerStatus(config), termCount: terms.length,
+        return json(res, { ...state(), captionStreaming: 'live-drafts-v1', voiceTransport: 'progressive-audio-v1', lastIssue, recognition: active?.bridge?.stats?.() || null, liveReady: ready(), topics, languages, providers: providerStatus(config), termCount: terms.length,
           ttsProvider: config.ttsProvider || 'xai', publicReady: Boolean(config.publicBaseUrl), viewerUrl,
           qr: await QRCode.toDataURL(viewerUrl, { width: 200, margin: 1 }) });
       }
@@ -169,7 +178,9 @@ export function createApp(config = {}) {
         if (url.searchParams.has('session') && url.searchParams.get('session') !== sessionId) throw fail(404, 'Audio session expired');
         const audio = pipeline.audio.get(Number(url.pathname.split('/').at(-1)));
         if (!audio) throw fail(404, 'Audio segment expired or unavailable');
-        res.writeHead(200, { 'Content-Type': audio.mime, 'Content-Length': audio.data.length }); res.end(audio.data); return;
+        const stream = Readable.fromWeb(audio.stream());
+        res.writeHead(200, { 'Content-Type': audio.mime, ...(audio.complete ? { 'Content-Length': audio.byteLength } : {}) });
+        stream.on('error', () => res.destroy()); res.on('close', () => stream.destroy()); stream.pipe(res); return;
       }
       let path = url.pathname;
       if (path === '/') path = '/index.html';

@@ -1,4 +1,5 @@
 import { scopedUrl } from './workspace.js';
+import { startVoicePlayback } from './voice-playback.js';
 const $ = id => document.getElementById(id);
 const token = new URLSearchParams(location.search).get('token');
 const audio = $('audio');
@@ -10,6 +11,7 @@ if (!names[locale]) locale = 'en';
 let view = 'translation';
 try { view = localStorage.getItem('btcpp-caption-view') || view; } catch {}
 if (!['translation', 'en', 'both'].includes(view)) view = 'translation';
+let voicePlayback;
 let listening = false, playing = false, queue = [], lastAudio = null, target = 'ko', events, timer;
 let current = { phase: 'idle', mode: 'idle', stage: 'Main Stage', targetLanguage: 'ko' }, sessionId, live = false;
 let currentDraft = null;
@@ -111,7 +113,7 @@ function caption(segment) {
   article.children[1].textContent = segment.english;
   while ($('captions').children.length > 10) $('captions').lastElementChild.remove();
 }
-function resetAudio() { audioGeneration++; queue = []; playing = false; audio.pause(); audio.removeAttribute('src'); audio.load(); }
+function resetAudio() { voicePlayback?.stop(); voicePlayback = null; audioGeneration++; queue = []; playing = false; audio.pause(); audio.removeAttribute('src'); audio.load(); }
 function resetSession(id) { resetAudio(); lastAudio = null; audioCursor = 0; sessionId = id; emptyCaptions(); }
 function state(event) {
   if (event.sessionId && event.sessionId !== sessionId) resetSession(event.sessionId);
@@ -133,12 +135,13 @@ async function playNext() {
   const next = queue.shift();
   if (Date.now() - next.createdAt > 20000) { notice(words().skipped, true); return playNext(); }
   const generation = audioGeneration; playing = true;
-  audio.src = scopedUrl(`/api/audio/${next.id}?token=${encodeURIComponent(token)}&session=${encodeURIComponent(sessionId || '')}`);
-  try { await audio.play(); }
+  voicePlayback?.stop();
+  voicePlayback = startVoicePlayback(audio, scopedUrl(`/api/audio/${next.id}?token=${encodeURIComponent(token)}&session=${encodeURIComponent(sessionId || '')}`));
+  try { await voicePlayback.playing; }
   catch { if (generation === audioGeneration) { listening = false; playing = false; button(); notice(words().failed, true); } }
 }
-audio.onended = () => { playing = false; void playNext(); };
-audio.onerror = () => { if (!live || !listening) return; playing = false; notice(words().speechFailed, true); void playNext(); };
+audio.onended = () => { voicePlayback?.stop(); voicePlayback = null; playing = false; void playNext(); };
+audio.onerror = () => { if (!live || !listening) return; voicePlayback?.stop(); voicePlayback = null; audioGeneration++; playing = false; notice(words().speechFailed, true); void playNext(); };
 function snapshot(event) {
   state(event); if (!live) return;
   for (const segment of event.history || []) { caption(segment); if (segment.audioReady) acceptAudio(segment); }

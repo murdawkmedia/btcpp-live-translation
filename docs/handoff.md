@@ -212,3 +212,30 @@ recovery invalidates owner/invites and stops that workspace's source, preserving
 encrypted settings; it is excluded while provider settings are being saved.
 The original StageSession namespace and default attendee capability are retained.
 See docs/workspaces.md for browser setup and the exact permission boundaries.
+
+
+## Shared progressive voice and provider login
+
+HTTP speech adapters report audio chunks as they arrive. The pipeline creates a
+SharedAudio cache on the first bytes, announces one audio event and allows each
+attendee to replay/follow it without another synthesis call. Response size and
+aggregate cache remain bounded; eviction/cancellation/failure terminate readers
+with fixed errors. Partial audio is never generated from revising caption drafts.
+The browser feeds MP3 frames through Media Source when supported and retains the
+normal audio fallback for other types/engines. User-tap unlocking, generation guards,
+Stop and stream abort remain essential. Browser buffering and hardware vary.
+
+Both runtime markers identify `progressive-audio-v1`; verify actual stage
+`voiceTransport` plus outer `X-Voice-Runtime` and uploaded bytes. xAI uses documented
+latency level 2. An owner-only speech check can temporarily test xAI/voice selection
+without saving; a passing check measures first audio bytes separately from completion.
+
+OpenRouter connection uses official S256/state. A server-only bounded pending map
+binds state/verifier to the owner and settings fingerprint for ten minutes. Workspace
+owner recovery invalidates old attempts. Finish is one-use and exchanges at the
+fixed official endpoint; only the encrypted OpenRouter key is saved. The browser
+removes callback parameters and receives status, not the key. Event grants and
+attendees cannot connect providers. No translation selection or billing changes on
+connect. Real account consent must be performed by its owner; fixture exchange is
+not proof of completed human authorization. xAI/ElevenLabs use private API keys.
+Visible GitWorkshop links appear on logged-out operator and attendee pages.

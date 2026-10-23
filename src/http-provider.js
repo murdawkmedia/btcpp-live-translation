@@ -3,12 +3,13 @@ import { translationInstructions, protectCurrencyUnits } from './glossary.js';
 import { readTranslationStream } from './translation-stream.js';
 
 const timeoutSignal = signal => AbortSignal.any([signal || new AbortController().signal, AbortSignal.timeout(30000)]);
-export async function bytes(response, max = 6 * 1024 * 1024) {
+export async function bytes(response, max = 6 * 1024 * 1024, onChunk) {
   if (!response.ok) { await response.body?.cancel(); throw Error(`Provider HTTP ${response.status}`); }
   const chunks = []; let length = 0;
   for await (const chunk of response.body) {
     length += chunk.length;
     if (length > max) { await response.body.cancel().catch(() => {}); throw Error('Provider response too large'); }
+    onChunk?.(chunk, response.headers.get('content-type')?.startsWith('audio/') ? response.headers.get('content-type') : 'audio/mpeg');
     chunks.push(chunk);
   }
   return Buffer.concat(chunks);
@@ -61,7 +62,7 @@ export function createLiveProvider(config = {}) {
         } catch (error) { if (attempt + 1 === attempts || signal?.aborted) throw error; }
       }
     },
-    async speak(text, signal) {
+    async speak(text, signal, { onChunk } = {}) {
       const provider = config.ttsProvider || 'xai';
       if (provider === 'workers-ai') {
         const lang = ({ ko: 'kr', ja: 'jp' })[target] || target;
@@ -85,10 +86,11 @@ export function createLiveProvider(config = {}) {
       } else {
         response = await fetch(`${base}/tts`, { method: 'POST', signal: timeoutSignal(signal),
           headers: { Authorization: `Bearer ${config.xaiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text, voice_id: config.voice || 'eve', language: target,
+          body: JSON.stringify({ text, voice_id: config.voice || 'eve', language: target, optimize_streaming_latency: 2,
             output_format: { codec: 'mp3', sample_rate: 24000, bit_rate: 64000 } }) });
       }
-      return { data: await bytes(response), mime: response.headers.get('content-type')?.startsWith('audio/') ? response.headers.get('content-type') : 'audio/mpeg' };
+      if (response.ok && !/^(audio\/|application\/octet-stream)/i.test(response.headers.get('content-type') || '')) { await response.body?.cancel(); throw Error('Speech provider returned invalid audio'); }
+      return { data: await bytes(response, 6 * 1024 * 1024, onChunk), mime: response.headers.get('content-type')?.startsWith('audio/') ? response.headers.get('content-type') : 'audio/mpeg' };
     }
   };
 }

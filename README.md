@@ -83,7 +83,13 @@ Choose each stage explicitly in the server environment:
 | Speech | `xai` | `XAI_API_KEY`, optional `XAI_VOICE` |
 
 Use `STT_PROVIDER`, `TRANSLATION_PROVIDER` and `TTS_PROVIDER` for these choices.
-Restart after environment changes. Keys never go into the browser or public assets.
+Restart after environment changes. Keys never go into the browser or public assets. Workspace owners can also use
+**Connect OpenRouter** under Providers: the official S256 PKCE flow saves an
+account-specific key encrypted on the server, without copying it through the
+browser. This connects translation using the owner’s OpenRouter credits; it does
+not change the selected model/provider. Pending connections expire after ten
+minutes or a service restart. xAI and ElevenLabs retain API-key setup; their
+first-party CLI/MCP login is not reused as this app’s delegated speech login.
 Cloud providers receive the audio/text needed for their selected stage and apply
 their own retention policies. The hosted `PROFILE=cloud` defaults to Workers AI
 when vendor keys are absent; see [Cloudflare deployment](docs/cloudflare.md).
@@ -126,6 +132,14 @@ or voice. Compatible xAI models use low reasoning effort for translation. A
 completed draft with exactly matching English can be reused at recognition
 commit. Streaming reduces app-side waiting; network, recognition and model
 latency still apply. English and Korean word order also means drafts can change.
+
+HTTP voice audio is available from its first bytes, through one shared bounded
+stream and cache. Supported browsers feed MP3 frames to Media Source playback;
+others use their normal audio element and may buffer longer. xAI speech requests
+use latency optimization level 2. Set the speech provider to xAI/Grok and choose a
+voice such as `rex`; check the provider before a live session. Captions never wait
+for voice. Spoken text still waits for a completed translation, so faster synthesis
+does not eliminate recognition/translation latency or make drafts safe to speak.
 
 Translation and synthesis happen once per stage/target, shared by listeners.
 The hosted default uses Whisper large v3 turbo, Qwen3 with /no_think for

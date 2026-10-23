@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import vm from 'node:vm';
 
-const code = (await readFile(new URL('../public/workspace.js', import.meta.url), 'utf8')).replaceAll('export function ', 'function ') + '\n' + (await readFile(new URL('../public/listen.js', import.meta.url), 'utf8')).replace("import { scopedUrl } from './workspace.js';", '');
+const code = (await readFile(new URL('../public/workspace.js', import.meta.url), 'utf8')).replaceAll('export function ', 'function ') + '\n' + (await readFile(new URL('../public/listen.js', import.meta.url), 'utf8')).replace("import { scopedUrl } from './workspace.js';", '').replace("import { startVoicePlayback } from './voice-playback.js';", '');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const segment = (text = '비트코인.', id = 1) => ({ id, english: 'Bitcoin.', translated: text, language: 'ko', createdAt: 100000, audioReady: false });
 async function phone(initial = {}, pathname = '/listen') {
@@ -24,7 +24,7 @@ async function phone(initial = {}, pathname = '/listen') {
   }
   const node = id => { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id); };
   const snapshot = { type: 'snapshot', sessionId: 'session-a', mode: 'live', phase: 'live', targetLanguage: 'ko', stage: 'Main Stage', direction: 'English → Korean', history: [segment()], ...initial };
-  const sandbox = { document: { getElementById: node, createElement: () => new Element(), querySelector: node, body: node('body'), documentElement: node('html') },
+  const sandbox = { startVoicePlayback: (audio, url) => { audio.src = url; return { playing: audio.play(), stop() {} }; }, document: { getElementById: node, createElement: () => new Element(), querySelector: node, body: node('body'), documentElement: node('html') },
     location: { search: '?token=viewer-fixture-only', pathname }, navigator: { language: 'en-CA' }, localStorage: { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) },
     URL, URLSearchParams, Blob, DataView, ArrayBuffer, AbortSignal, AbortController, console,
     Date: class extends Date { static now() { return now; } },

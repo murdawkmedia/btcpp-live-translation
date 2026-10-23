@@ -9,7 +9,7 @@ test('ElevenLabs speech adapter sends Korean text with server-side credentials',
   const server = createServer(async (req, res) => {
     let body = ''; for await (const chunk of req) body += chunk;
     received = { url: req.url, key: req.headers['xi-api-key'], body: JSON.parse(body) };
-    res.end(Buffer.from('eleven-fixture-audio'));
+    res.setHeader('Content-Type', 'audio/mpeg'); res.end(Buffer.from('eleven-fixture-audio'));
   });
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   t.after(() => { server.closeAllConnections(); server.close(); });

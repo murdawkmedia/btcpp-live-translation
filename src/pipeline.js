@@ -1,5 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { LiveDraft } from './live-draft.js';
+import { SharedAudio } from './shared-audio.js';
 
 export class Pipeline extends EventEmitter {
   constructor(provider, { maxQueue = 6, maxSpeechQueue = 3, maxHistory = 80, maxAudioBytes = 24 * 1024 * 1024, draftIntervalMs = 2000 } = {}) {
@@ -30,6 +31,7 @@ export class Pipeline extends EventEmitter {
   }
   cancel() {
     this.liveDraft.clear(); this.currentTranslation = null;
+    for (const id of this.audio.keys()) this.removeAudio(id);
     this.generation++; this.controller.abort(); this.controller = new AbortController();
     for (const item of this.queue.splice(0)) item.resolve(false);
     for (const { item } of this.speechQueue.splice(0)) item.resolve(false);
@@ -88,16 +90,29 @@ export class Pipeline extends EventEmitter {
       const current = () => item.generation === this.generation && !signal.aborted;
       if (!current()) { item.resolve(false); continue; }
       if (!this.history.includes(segment) || Date.now() - segment.createdAt > 20000) { item.resolve(true); continue; }
+      let asset;
+      const append = (chunk, mime) => {
+        if (!current() || !this.history.includes(segment)) throw Error('Speech cancelled');
+        if (!chunk?.byteLength) return;
+        if (!asset) { asset = new SharedAudio(mime); this.audio.set(segment.id, asset); }
+        if (asset.byteLength + chunk.byteLength > Math.min(this.maxAudioBytes, 6 * 1024 * 1024)) throw Error('Audio size invalid');
+        while (this.audioBytes + chunk.byteLength > this.maxAudioBytes && this.audio.size) {
+          const id = this.audio.keys().next().value;
+          if (id === segment.id) throw Error('Audio cache reached capacity');
+          this.removeAudio(id);
+        }
+        const first = asset.byteLength === 0; asset.append(chunk); this.audioBytes += chunk.byteLength;
+        if (first) { segment.audioReady = true; this.event({ type: 'audio', id: segment.id, createdAt: segment.createdAt }); }
+      };
       try {
-        const audio = await this.provider.speak(segment.translated, signal);
+        const audio = await this.provider.speak(segment.translated, signal, { onChunk: append });
         if (!current()) { item.resolve(false); continue; }
         if (!this.history.includes(segment)) { item.resolve(true); continue; }
-        if (!audio?.data?.length || audio.data.length > this.maxAudioBytes) throw Error('Audio size invalid');
-        while (this.audioBytes + audio.data.length > this.maxAudioBytes && this.audio.size) this.removeAudio(this.audio.keys().next().value);
-        this.audio.set(segment.id, audio); this.audioBytes += audio.data.length;
-        segment.audioReady = true;
-        this.event({ type: 'audio', id: segment.id, createdAt: segment.createdAt });
+        if (!asset) append(audio?.data, audio?.mime);
+        if (!asset?.byteLength) throw Error('Audio size invalid');
+        asset.finish();
       } catch {
+        if (asset) this.removeAudio(segment.id);
         if (current()) this.event({ type: 'issue', stage: 'speech', message: 'Audio unavailable for this caption; text remains available.' });
       }
       item.resolve(current());
@@ -109,7 +124,7 @@ export class Pipeline extends EventEmitter {
   }
   removeAudio(id) {
     const audio = this.audio.get(id);
-    if (audio) this.audioBytes -= audio.data.length;
+    if (audio) { this.audioBytes -= audio.byteLength; audio.fail(); }
     this.audio.delete(id);
     const segment = this.history.find(s => s.id === id);
     if (segment) segment.audioReady = false;

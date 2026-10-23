@@ -4,7 +4,8 @@ import { Buffer } from 'node:buffer';
 import QRCode from 'qrcode';
 import { configFromEnv, providerStatus } from '../src/config.js';
 import { ProviderSettings, secureProviderOrigin } from '../src/provider-settings.js';
-import { checkProvider } from '../src/provider-check.js';
+import { ProviderConnect } from '../src/provider-connect.js';
+import { checkProvider, speechCheckConfig } from '../src/provider-check.js';
 import { languages, language } from '../src/languages.js';
 import { terms, topics, selectHints } from '../src/glossary.js';
 import { Pipeline } from '../src/pipeline.js';
@@ -22,6 +23,7 @@ const cookieToken = request => (request.headers.get('Cookie') || '').split(';').
 const security = {
   'X-Translation-Runtime': 'handshake-deadline-v2',
   'X-Caption-Runtime': 'live-drafts-v1',
+  'X-Voice-Runtime': 'progressive-audio-v1',
   'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
   'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
 };
@@ -61,6 +63,7 @@ export class StageSession extends DurableObject {
     this.settings = new ProviderSettings(config, { key: env.PROVIDER_SETTINGS_KEY, storage: {
       get: () => ctx.storage.get('provider-settings-v1'), put: value => ctx.storage.put('provider-settings-v1', value)
     } });
+    this.connect = new ProviderConnect(this.settings);
     this.target = this.config.targetLanguage; this.subscribers = new Set(); this.active = null;
     this.mode = 'idle'; this.phase = 'idle'; this.replace(createRehearsalProvider());
   }
@@ -151,13 +154,21 @@ export class StageSession extends DurableObject {
         }
         if (url.pathname === '/api/logout') return json({ ok: true }, 200, { 'Set-Cookie': `btcpp_operator=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${url.protocol === 'https:' ? '; Secure' : ''}` });
         if (url.pathname.startsWith('/api/providers') && !secureProviderOrigin(request.headers.get('Origin'))) throw error(403, 'Private provider settings require HTTPS or a local loopback connection.');
+        if (url.pathname === '/api/providers/connect/openrouter') {
+          if (this.active) throw error(409, 'Stop the session before connecting a provider');
+          const prefix = request.headers.get('X-Workspace-Prefix');
+          const owner = this.access?.value?.ownerHash || cookieToken(request);
+          if (body.action === 'begin') return json(await this.connect.begin(url.origin + (/^\/w\/[a-f0-9]{32}$/.test(prefix || '') ? prefix : '') + '/', owner));
+          if (body.action === 'finish') return json(await this.connect.finish(body, owner));
+          throw error(400, 'Unsupported connection action');
+        }
         if (url.pathname === '/api/providers') {
           if (this.active) throw error(409, 'Stop the session before changing providers');
           return json(await this.settings.update(body));
         }
         if (url.pathname === '/api/providers/test') {
           if (this.active) throw error(409, 'Stop the session before testing providers');
-          return json(await this.settings.withLock(() => checkProvider({ ...this.config, targetLanguage: this.target }, body.stage, {
+          return json(await this.settings.withLock(() => checkProvider(speechCheckConfig({ ...this.config, targetLanguage: this.target }, body), body.stage, {
             openSocket: (url, headers) => this.openProviderSocket(url, headers)
           })));
         }
@@ -199,7 +210,7 @@ export class StageSession extends DurableObject {
         const viewerUrl = `${url.origin}${/^\/w\/[a-f0-9]{32}$/.test(prefix || '') ? prefix : ''}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
         return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null,
-          recognitionTransport: 'handshake-deadline-v2', captionStreaming: 'live-drafts-v1', viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
+          recognitionTransport: 'handshake-deadline-v2', captionStreaming: 'live-drafts-v1', voiceTransport: 'progressive-audio-v1', viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
           liveReady: this.ready(), providers: providerStatus(this.config), languages,
           topics, termCount: terms.length, publicReady: true, ttsProvider: this.config.ttsProvider });
       }
@@ -231,7 +242,7 @@ export class StageSession extends DurableObject {
         if (url.searchParams.has('session') && url.searchParams.get('session') !== this.sessionId) throw error(404, 'Audio session expired');
         const audio = this.pipeline.audio.get(Number(url.pathname.split('/').at(-1)));
         if (!audio) throw error(404, 'Audio segment expired or unavailable');
-        return new Response(audio.data, { headers: { 'Content-Type': audio.mime, 'Content-Length': String(audio.data.length) } });
+        return new Response(audio.stream(), { headers: { 'Content-Type': audio.mime, ...(audio.complete ? { 'Content-Length': String(audio.byteLength) } : {}) } });
       }
       throw error(404, 'Not found');
     } catch (e) { return json({ error: e.status ? e.message : 'Request failed' }, e.status || 500); }

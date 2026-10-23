@@ -10,7 +10,7 @@ import { createRehearsalProvider } from '../src/rehearsal.js';
 
 test('Worker uses real outbound ElevenLabs-style WS and shares fixture translated audio', { timeout: 60000 }, async t => {
   let secretHeader, hints, translations = 0, speech = 0, pcm = 0, connections = 0;
-  let draftMode = false, heldDraft;
+  let draftMode = false, heldDraft, heldSpeech;
   const http = createServer(async (req, res) => {
     let body = ''; for await (const p of req) body += p;
     const input = JSON.parse(body);
@@ -23,7 +23,11 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
         heldDraft = res; return;
       }
       res.setHeader('content-type', 'application/json'); res.end(JSON.stringify({ choices: [{ message: { content: 'FROST는 비트코인 키를 보호합니다.' } }] }));
-    } else { speech++; res.setHeader('content-type', 'audio/wav'); res.end((await createRehearsalProvider().speak('')).data); }
+    } else {
+      speech++; res.setHeader('content-type', 'audio/wav'); const data = (await createRehearsalProvider().speak('')).data;
+      if (speech === 1) { res.write(data.subarray(0, 44)); heldSpeech = { response: res, tail: data.subarray(44) }; }
+      else res.end(data);
+    }
   });
   const wss = new WebSocketServer({ server: http });
   wss.on('connection', (ws, req) => {
@@ -69,7 +73,7 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
   assert.equal((await fetch(origin + '/api/health')).headers.get('x-translation-runtime'), 'handshake-deadline-v2');
   const runtime = await (await fetch(origin + '/api/config', { headers: { Cookie: 'btcpp_operator=operator-fixture-only' } })).json();
   assert.equal(runtime.recognitionTransport, 'handshake-deadline-v2', 'The running Durable Object must identify its connection implementation');
-  assert.equal(runtime.captionStreaming, 'live-drafts-v1');
+  assert.equal(runtime.captionStreaming, 'live-drafts-v1'); assert.equal(runtime.voiceTransport, 'progressive-audio-v1');
   assert.equal((await fetch(origin + '/api/listener')).status, 401);
   assert.equal((await fetch(origin + '/api/listener?token=incorrect')).status, 401);
   assert.equal((await fetch(origin + '/api/config?token=viewer-fixture-only')).status, 401);
@@ -109,6 +113,14 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 30));
   }
   assert.equal(status.history[0]?.translated, 'FROST는 비트코인 키를 보호합니다.');
+  assert.equal(heldSpeech.response.writableEnded, false);
+  const early = await Promise.all([fetch(origin + '/api/audio/1?token=viewer-fixture-only'), fetch(origin + '/api/audio/1?token=viewer-fixture-only')]);
+  const readers = early.map(response => response.body.getReader());
+  for (const reader of readers) assert.equal(Buffer.from((await reader.read()).value).subarray(0, 4).toString(), 'RIFF');
+  assert.equal(speech, 1, 'Attendees share one upstream voice request');
+  heldSpeech.response.end(heldSpeech.tail);
+  for (const reader of readers) while (!(await reader.read()).done) {}
+
   // Keep both directions active past the handshake deadline. An idle socket alone
   // does not detect a fetch abort whose effect appears on subsequent traffic.
   const keepAudio = setInterval(() => { if (ws.readyState === WebSocket.OPEN) ws.send(Buffer.alloc(3200)); }, 100);

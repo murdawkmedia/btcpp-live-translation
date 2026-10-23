@@ -241,3 +241,20 @@ test('local mode uses only configured loopback services and retires audio after 
   assert.equal(a.status, 409); assert.equal(b.status, 409);
   assert.deepEqual([recognition, translation, speech], [1, 1, 1]);
 });
+
+
+test('provider login is owner-only, origin-bound and stores an exchanged key privately', async t => {
+ let saved;
+ const { request } = await start(t, { settingsKey: '23'.repeat(32), settingsStorage: { get: () => saved, put: value => { saved = value; } } });
+ const route = '/api/providers/connect/openrouter';
+ assert.equal((await request(route, { body: { action: 'begin' } })).status, 401);
+ assert.equal((await request(route, { auth: true, origin: 'https://other.invalid', body: { action: 'begin' } })).status, 403);
+ const begun = await (await request(route, { auth: true, body: { action: 'begin' } })).json();
+ const state = new URL(begun.url).searchParams.get('state');
+ const originalFetch = globalThis.fetch;
+ t.mock.method(globalThis, 'fetch', (url, options) => String(url).startsWith('https://openrouter.ai/') ? Promise.resolve(Response.json({ key: 'connection-fixture-private-key' })) : originalFetch(url, options));
+ const result = await request(route, { auth: true, body: { action: 'finish', state, code: 'fixture-code' } });
+ assert.equal(result.status, 200); assert.equal((await result.json()).keys.openrouter.configured, true);
+ assert.equal(JSON.stringify(saved).includes('connection-fixture-private-key'), false);
+ assert.equal((await request(route, { auth: true, body: { action: 'finish', state, code: 'fixture-code' } })).status, 400);
+});
