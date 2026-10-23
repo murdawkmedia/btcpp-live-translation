@@ -85,6 +85,9 @@ the established WebSocket lifetime: aborting that fetch after upgrade also close
 the live provider stream. The Worker regression sends continuous duplex traffic
 past the deadline and asserts the provider connection count, since the browser
 socket may stay open while the bridge silently reconnects underneath it.
+Operator GET `/api/config` identifies this implementation as
+`recognitionTransport: handshake-deadline-v2`. Verify the running Durable Object
+as well as uploaded Worker bytes before accepting a hosted release.
 
 A cloud recognition window gets at most two attempts, including a retry for
 missing word timestamps before overlap assembly mutates its state. Authentication

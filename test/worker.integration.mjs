@@ -58,6 +58,8 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 150));
   }
   assert.ok(ready, logs);
+  const runtime = await (await fetch(origin + '/api/config', { headers: { Cookie: 'btcpp_operator=operator-fixture-only' } })).json();
+  assert.equal(runtime.recognitionTransport, 'handshake-deadline-v2', 'The running Durable Object must identify its connection implementation');
   assert.equal((await fetch(origin + '/api/listener')).status, 401);
   assert.equal((await fetch(origin + '/api/listener?token=incorrect')).status, 401);
   assert.equal((await fetch(origin + '/api/config?token=viewer-fixture-only')).status, 401);

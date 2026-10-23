@@ -195,7 +195,8 @@ export class StageSession extends DurableObject {
         const prefix = request.headers.get('X-Workspace-Prefix');
         const viewerUrl = `${url.origin}${/^\/w\/[a-f0-9]{32}$/.test(prefix || '') ? prefix : ''}/listen?token=${this.env.VIEWER_TOKEN}`;
         const svg = await QRCode.toString(viewerUrl, { type: 'svg', margin: 1, width: 200 });
-        return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null, viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
+        return json({ ...this.state(), lastIssue: this.lastIssue, recognition: this.active?.bridge?.stats?.() || null,
+          recognitionTransport: 'handshake-deadline-v2', viewerUrl, qr: `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`,
           liveReady: this.ready(), providers: providerStatus(this.config), languages,
           topics, termCount: terms.length, publicReady: true, ttsProvider: this.config.ttsProvider });
       }
