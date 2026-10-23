@@ -92,6 +92,10 @@ test('Worker uses real outbound ElevenLabs-style WS and shares fixture translate
     await new Promise(resolve => setTimeout(resolve, 30));
   }
   assert.equal(status.history[0]?.translated, 'FROST는 비트코인 키를 보호합니다.');
+  await new Promise(resolve => setTimeout(resolve, 8500));
+  assert.equal(ws.readyState, WebSocket.OPEN, 'A handshake timeout must not close an established recognition socket');
+  const held = await (await fetch(origin + '/api/config', { headers: { Cookie: cookie } })).json();
+  assert.equal(held.phase, 'live');
   const listener = await (await fetch(origin + '/api/listener?token=viewer-fixture-only')).json();
   assert.equal(listener.history[0].translated, status.history[0].translated);
   assert.notEqual(listener.sessionId, waiting.sessionId); assert.equal(listener.providers, undefined);
