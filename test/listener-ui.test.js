@@ -7,7 +7,7 @@ const code = (await readFile(new URL('../public/workspace.js', import.meta.url),
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const segment = (text = '비트코인.', id = 1) => ({ id, english: 'Bitcoin.', translated: text, language: 'ko', createdAt: 100000, audioReady: false });
 async function phone(initial = {}, pathname = '/listen') {
-  const nodes = new Map(), streams = [], intervals = [], requests = [], windowHandlers = {}, saved = new Map(); let now = 100000, status = 200, pending;
+  const nodes = new Map(), streams = [], intervals = [], requests = [], windowHandlers = {}, saved = new Map(); let now = 100000, status = 200, pending, reloads = 0;
   class Element {
     constructor() { this.children = []; this.dataset = {}; this.handlers = {}; this.disabled = false; this.value = ''; this.textContent = ''; this.classes = new Set(); this.classList = { add: s => this.classes.add(s), remove: s => this.classes.delete(s), toggle: (s, yes) => yes ? this.classes.add(s) : this.classes.delete(s) }; }
     addEventListener(type, handler) { this.handlers[type] = handler; }
@@ -25,7 +25,7 @@ async function phone(initial = {}, pathname = '/listen') {
   const node = id => { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id); };
   const snapshot = { type: 'snapshot', sessionId: 'session-a', mode: 'live', phase: 'live', targetLanguage: 'ko', stage: 'Main Stage', direction: 'English → Korean', history: [segment()], ...initial };
   const sandbox = { startVoicePlayback: (audio, url) => { audio.src = url; return { playing: audio.play(), stop() {} }; }, document: { getElementById: node, createElement: () => new Element(), querySelector: node, body: node('body'), documentElement: node('html') },
-    location: { search: '?token=viewer-fixture-only', pathname }, navigator: { language: 'en-CA' }, localStorage: { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) },
+    location: { search: '?token=viewer-fixture-only', pathname, reload: () => { reloads++; } }, navigator: { language: 'en-CA' }, localStorage: { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) },
     URL, URLSearchParams, Blob, DataView, ArrayBuffer, AbortSignal, AbortController, console,
     Date: class extends Date { static now() { return now; } },
     window: { addEventListener: (name, handler) => { windowHandlers[name] = handler; } },
@@ -33,7 +33,7 @@ async function phone(initial = {}, pathname = '/listen') {
     fetch: async (path, options) => { requests.push({ path, options }); if (pending) return pending; return { ok: status === 200, status, json: async () => structuredClone(snapshot) }; },
     setTimeout, clearTimeout, setInterval: callback => { intervals.push(callback); return intervals.length; }, clearInterval() {} };
   vm.runInNewContext(code, sandbox, { filename: 'listen.js' }); await tick();
-  return { node, snapshot, requests, streams, saved, advance: ms => { now += ms; }, poll: async () => { for (const callback of intervals) await callback(); await tick(); },
+  return { node, snapshot, requests, streams, saved, reloads: () => reloads, show: persisted => windowHandlers.pageshow?.({ persisted }), advance: ms => { now += ms; }, poll: async () => { for (const callback of intervals) await callback(); await tick(); },
     click: async id => { if (!node(id).disabled) await node(id).handlers.click?.(); },
     locale: async value => { node('ui-language').value = value; await node('ui-language').handlers.change?.(); },
     emit: event => streams[0].onmessage({ data: JSON.stringify(event) }), disconnect: () => streams[0].onerror(),
@@ -165,4 +165,16 @@ test('workspace attendee snapshots, event streams and audio stay scoped', async 
   await ui.click('listen'); ui.emit({ type: 'audio', id: 1, createdAt: 100000 });
   ui.node('audio').onended();
   await tick(); assert.ok(ui.node('audio').src.startsWith(prefix + '/api/audio/'));
+});
+
+
+test('returning to a cached attendee page refreshes disconnected streams without replaying audio', async () => {
+  const ui = await phone();
+  ui.show(false); assert.equal(ui.reloads(), 0);
+  await ui.click('listen'); ui.hide();
+  assert.equal(ui.streams[0].closed, true);
+  const plays = ui.node('audio').plays;
+  ui.show(true);
+  assert.equal(ui.reloads(), 1);
+  assert.equal(ui.node('audio').plays, plays);
 });

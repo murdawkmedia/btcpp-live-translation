@@ -4,7 +4,7 @@ import { scopedUrl, workspacePrefix, initWorkspacePanel } from './workspace.js';
 const $ = id => document.getElementById(id);
 let config, terms = [], packs = {}, events, capture, socket, providerPanel, workspacePanel, providerBusy = false;
 let localPhase = 'idle', localMode = 'idle', attempt = 0, serverState = { phase: 'idle', mode: 'idle' }, lastIssue = '';
-let lastEventAt = Date.now(), polling = false, cancelRetry;
+let lastEventAt = Date.now(), polling = false, cancelRetry, eventRevision = 0;
 let currentDraft = null;
 const notice = (message, warning = false) => { $('notice').textContent = message; $('notice').classList.toggle('warning', warning); };
 async function api(path, body, signal) {
@@ -63,21 +63,24 @@ function renderStatus(update = {}) {
   }
 }
 function recoverSnapshot(state) {
+  if (state.sessionId && state.sessionId !== serverState.sessionId) {
+    $('captions').replaceChildren(); renderDraft(null); $('processing').textContent = ''; lastIssue = '';
+  }
   if (state.lastIssue && state.lastIssue.sessionId === state.sessionId) lastIssue = state.lastIssue.message;
   for (const segment of state.history || []) renderCaption(segment);
   renderDraft(state.draft || null);
   const finished = localPhase === 'finishing' && ['idle', 'error'].includes(state.phase);
   if (finished) { localPhase = 'idle'; localMode = 'idle'; }
   renderStatus(state);
-  if (finished) notice(state.phase === 'error' ? lastIssue || 'The session stopped with an error. Choose audio & go live to retry.' : 'Session stopped. Choose audio & go live to start again.', state.phase === 'error');
+  if (finished || state.phase === 'error') notice(state.phase === 'error' ? lastIssue || 'The session stopped with an error. Choose audio & go live to retry.' : 'Session stopped. Choose audio & go live to start again.', state.phase === 'error');
 }
 async function recoverCaptions() {
-  if (polling || !['live', 'finishing'].includes(localPhase) || Date.now() - lastEventAt < 5000) return;
-  const id = attempt, sourceSocket = socket; polling = true;
+  if (polling || (!['live', 'finishing'].includes(localPhase) && !['connecting', 'live', 'reconnecting', 'finishing'].includes(serverState.phase)) || Date.now() - lastEventAt < 5000) return;
+  const id = attempt, sourceSocket = socket, revision = eventRevision; polling = true;
   try {
     const state = await api('/api/config', undefined, AbortSignal.timeout(10000));
-    if (id === attempt && sourceSocket === socket) recoverSnapshot(state);
-  } catch { if (id === attempt) notice('Caption connection interrupted. Retrying; Stop remains available.', true); }
+    if (id === attempt && sourceSocket === socket && revision === eventRevision) recoverSnapshot(state);
+  } catch { if (id === attempt && revision === eventRevision) notice('Caption connection interrupted. Retrying; Stop remains available.', true); }
   finally { polling = false; }
 }
 function renderTerms() {
@@ -123,9 +126,9 @@ async function openDesk() {
   if (!config.liveReady) notice('Set up recognition and translation in Providers below. Voice is optional; local rehearsal is available.', true);
   events?.close(); events = new EventSource(scopedUrl('/api/events'));
   events.onmessage = ({ data }) => {
-    const event = JSON.parse(data); lastEventAt = Date.now();
+    const event = JSON.parse(data); lastEventAt = Date.now(); eventRevision++;
     if (event.type === 'snapshot') recoverSnapshot(event);
-    if (event.type === 'reset') { serverState.sessionId = event.sessionId; $('captions').replaceChildren(); renderDraft(null); }
+    if (event.type === 'reset') { serverState.sessionId = event.sessionId; lastIssue = ''; $('captions').replaceChildren(); renderDraft(null); $('processing').textContent = ''; }
     if (event.sessionId && serverState.sessionId && event.type !== 'snapshot' && event.type !== 'status' && event.sessionId !== serverState.sessionId) return;
     if (['caption', 'caption-draft', 'transcript'].includes(event.type)) renderCaption(event.segment);
     if (event.type === 'draft') renderDraft(event.draft);
@@ -136,7 +139,7 @@ async function openDesk() {
     }
     if (event.type === 'issue') { if (event.stage === 'capture') lastIssue = event.message; notice(event.message, true); }
   };
-  events.onerror = () => { lastEventAt = 0; notice('Caption stream interrupted. Recovering current captions automatically.', true); };
+  events.onerror = () => { lastEventAt = 0; notice(serverState.phase === 'error' && lastIssue ? lastIssue : 'Caption stream interrupted. Recovering current captions automatically.', true); };
 }
 $('login-form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -291,3 +294,6 @@ api('/api/health').then(health => {
 }).catch(() => {});
 const recoveryTimer = setInterval(recoverCaptions, 2500);
 window.addEventListener('pagehide', () => { clearInterval(recoveryTimer); ++attempt; cancelRetry?.(); capture?.stop(); socket?.close(); events?.close(); });
+
+// pagehide closes live resources; a Back/Forward cache restore must reconnect afresh.
+window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });

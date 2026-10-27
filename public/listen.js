@@ -212,3 +212,6 @@ if (token) {
   void recover(); timer = setInterval(recover, 2500);
 }
 window.addEventListener('pagehide', () => { closed = true; revision++; clearInterval(timer); events?.close(); resetAudio(); });
+
+// pagehide closes live resources; a Back/Forward cache restore must reconnect afresh.
+window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });

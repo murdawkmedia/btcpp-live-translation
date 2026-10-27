@@ -275,3 +275,12 @@ attendees cannot connect providers. No translation selection or billing changes 
 connect. Real account consent must be performed by its owner; fixture exchange is
 not proof of completed human authorization. xAI/ElevenLabs use private API keys.
 Visible GitWorkshop links appear on logged-out operator and attendee pages.
+
+## Browser recovery
+
+Both pages refresh when restored from the browser Back/Forward cache because
+pagehide closes their live connections. Operator capture is never restarted
+automatically; attendees tap Listen again to enable audio. Monitoring operator
+desks recover active server sessions even without local capture. Snapshot recovery
+clears rows on a changed session ID and discards responses superseded by newer
+events. Current-session terminal failure reasons survive SSE reconnect notices.

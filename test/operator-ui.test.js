@@ -11,7 +11,7 @@ const code = workspace + '\n' + (await readFile(new URL('../public/provider-sett
 const tick = () => new Promise(resolve => setImmediate(resolve));
 async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pathname = '/',
   topicOptions = ['privacy'], vocabulary = { terms: [] } } = {}) {
-  const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000, pendingSnapshot;
+  const nodes = new Map(), sockets = [], streams = [], captures = [], intervals = []; let now = 100000, pendingSnapshot, reloads = 0; const windowHandlers = {};
   class Element {
     constructor() { this.disabled = false; this.value = ''; this.children = []; this.handlers = {}; this.dataset = {}; this.classList = { toggle() {} }; }
     addEventListener(type, handler) { this.handlers[type] = handler; }
@@ -45,7 +45,7 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pa
   const config = { liveReady: true, topics: topicOptions, languages: [{ code: 'ko', name: 'Korean', native: '한국어' }], targetLanguage: 'ko',
     providers: { recognition: 'fixture', translation: 'fixture', speech: 'fixture' }, qr: '', viewerUrl: '/listen', publicReady: true, termCount: 345, phase: 'idle', mode: 'idle', history: [] };
   const sandbox = { document: { getElementById: node, createElement: () => new Element() },
-    window: { addEventListener() {} }, location: { protocol: 'https:', host: 'fixture.invalid', pathname },
+    window: { addEventListener: (name, handler) => { windowHandlers[name] = handler; } }, location: { protocol: 'https:', host: 'fixture.invalid', pathname, reload: () => { reloads++; } },
     WebSocket: Socket, EventSource: class { constructor(url) { this.url = url; streams.push(this); } close() {} },
     chooseAudio: chooser ? () => chooser(makeCapture) : async () => makeCapture(),
     fetch: async path => { const held = path === '/api/config' ? pendingSnapshot : null; if (held) pendingSnapshot = null; return { ok: true, json: async () => { if (held) { await held.promise; return held.value; } return path === '/api/health' ? { operatorAuthenticated: true } : path === '/api/config' ? config : path === '/api/terms' ? vocabulary : { ok: true }; } }; },
@@ -53,7 +53,7 @@ async function desk({ chooser, ready = true, connectionErrorAfter = Infinity, pa
     Date: class extends Date { static now() { return now; } }, navigator: {}, console };
   vm.runInNewContext(code, sandbox, { filename: 'app.js' });
   await tick();
-  return { node, sockets, captures, config,
+  return { node, sockets, captures, config, reloads: () => reloads, hide: () => windowHandlers.pagehide(), show: persisted => windowHandlers.pageshow?.({ persisted }),
     holdSnapshot: () => { let release; pendingSnapshot = { value: JSON.parse(JSON.stringify(config)), promise: new Promise(resolve => { release = resolve; }) }; return release; },
     advance: ms => { now += ms; }, poll: async () => { for (const callback of intervals) await callback(); },
     click: id => node(id).disabled ? undefined : node(id).handlers.click?.({}),
@@ -253,4 +253,51 @@ test('workspace capture and operator event streams use the workspace prefix', as
   await ui.click('start');
   assert.match(ui.sockets[0].url, new RegExp(`/w/${id}/api/capture$`));
   await ui.click('stop');
+});
+
+
+test('returning to a cached desk refreshes status without restarting microphone capture', async () => {
+  const ui = await desk();
+  ui.show(false); assert.equal(ui.reloads(), 0);
+  await ui.click('start'); ui.hide(); await tick();
+  assert.ok(ui.captures[0].stopped > 0);
+  ui.show(true);
+  assert.equal(ui.reloads(), 1);
+  assert.equal(ui.captures.length, 1);
+});
+
+test('terminal session reasons survive transport warnings and snapshot recovery', async () => {
+  const ui = await desk();
+  const failure = { ...ui.config, type: 'snapshot', sessionId: 'failed-session', phase: 'error', lastIssue: { sessionId: 'failed-session', message: 'Transcription quota exhausted.' } };
+  ui.emit(failure); ui.disconnect(); ui.emit(failure);
+  assert.equal(ui.node('notice').textContent, 'Transcription quota exhausted.');
+});
+
+test('a new session snapshot clears old caption rows even when reset was missed', async () => {
+  const ui = await desk();
+  ui.emit({ ...ui.config, type: 'snapshot', sessionId: 'a', history: [{ id: 1, english: 'A one' }, { id: 2, english: 'A two', processingMs: 900 }] });
+  ui.emit({ ...ui.config, type: 'snapshot', sessionId: 'b', history: [{ id: 1, english: 'B one' }] });
+  assert.equal(ui.node('captions').children.length, 1);
+  assert.equal(ui.node('captions').children[0].children[0].textContent, 'B one');
+  assert.doesNotMatch(ui.node('processing').textContent, /0.9s/);
+});
+
+test('a monitoring desk recovers a live server session without acquiring audio', async () => {
+  const ui = await desk();
+  Object.assign(ui.config, { sessionId: 'remote-session', phase: 'live', mode: 'live' });
+  ui.emit({ ...ui.config, type: 'snapshot' }); ui.disconnect();
+  ui.config.history = [{ id: 1, english: 'Remote speech' }];
+  ui.advance(6000); await ui.poll();
+  assert.equal(ui.node('captions').children[0]?.children[0].textContent, 'Remote speech');
+  assert.equal(ui.captures.length, 0);
+});
+
+test('a monitoring snapshot cannot undo a newer session event', async () => {
+  const ui = await desk();
+  Object.assign(ui.config, { sessionId: 'a', phase: 'live', mode: 'live', history: [{ id: 1, english: 'Old' }] });
+  ui.emit({ ...ui.config, type: 'snapshot' }); ui.disconnect();
+  const release = ui.holdSnapshot(); ui.advance(6000); const polling = ui.poll(); await tick();
+  ui.emit({ ...ui.config, type: 'snapshot', sessionId: 'b', history: [{ id: 1, english: 'New' }] });
+  release(); await polling;
+  assert.equal(ui.node('captions').children[0].children[0].textContent, 'New');
 });
